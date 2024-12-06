@@ -1,0 +1,7 @@
+playwright
+python-dotenv
+SQLAlchemy
+psycopg2
+asyncpg
+requests
+rich
