@@ -18,4 +18,6 @@ Kick websites are webscraped every 5 minutes and stored inside a PostgreSQL data
 
 ![Emongg](images/emongg.png)
 
-## FIXME: insert my flow chart into here
+## FIXME: Insert flow chart here
+
+## FIXME: Clean up code
