@@ -36,7 +36,7 @@ def create_embedding(data : json, streaming_platform : str):
         )
     embed.add_field(name=f"{data['title']}", value="")
     embed.set_image(url=f"{data['video_thumbnail']}") # url
-    embed.set_thumbnail(url=f"{data['profile_pic']}") # url
+    embed.set_thumbnail(url=f"{data['profile_pic']}" if data['profile_pic'] else "https://kick.com/img/default-profile-pictures/default1.jpeg") # url, else use default image
     return embed
 
 # helper function
