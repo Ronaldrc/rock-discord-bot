@@ -4,13 +4,17 @@ Get discord notifications when user-selected Kick and Twitch streams are live
 
 --------------------------------------------------------------------------------
 
-Rock Bot webscrapes Kick's public API and utilizes Twitch API to determine live streamers.
+Rock Bot webscrapes Kick's API and utilizes Twitch API to determine live streamers.
 
-Within 1 minute of your favorite streamer going live, your discord server will be notified.
+Within 1 minute of your favorite streamer going live...
+- Get discord channel notifications
+- Real-time list of online and offline streamers
 
 # Overview
 
-Kick websites are webscraped every 5 minutes and stored inside a PostgreSQL database.
+Kick currently lacks an API readily available for users. Therefore, websites are webscraped.
+Twitch has a public API, so calls are made to receive streamer information.
+All information is stored in a PostgreSQL docker container.
 
 # Demo
 
