@@ -69,7 +69,7 @@ async def edit_streamer_live_not_live_msg():
         channel = client.get_channel(int(DISCORD_STREAMERS_CHANNEL_ID))
         message_to_edit = await channel.fetch_message(int(DISCORD_STREAMERS_MESSAGE_ID))
         live, not_live = await get_live_and_offline_streamers_db()
-        formatted_string = format_live_and_not_live_lists(live, not_live, datetime.now())
+        formatted_string = format_live_and_not_live_lists(live, not_live)
         await message_to_edit.edit(content=formatted_string, suppress=True)
     except Exception as e:
         logger.error(f"Failed to edit streamer live, not live msg: {e}")
