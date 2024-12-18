@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import os
 import json
 from logger_config import get_logger
-from datetime import datetime
+from datetime import datetime, timedelta, timezone 
 
 logger = get_logger(__name__)
 
@@ -62,15 +62,19 @@ def datetime_to_discord_time_stamp(time : datetime) -> str:
     discord_time_stamp_r ="<t:"+str(time_int)+":R>"  # change last letter to R or F
     return discord_time_stamp_r
 
-def format_live_and_not_live_lists(live : list[tuple], not_live : list[tuple], datetime_now : datetime) -> str:
+def format_live_and_not_live_lists(live : list[dict], not_live : list[dict]) -> str:
     formatted_string = "🔴 LIVE NOW 🔴 \n"
-    formatted_string += "".join([f"{name}\n{url}\n" for (name, url) in live])
+    formatted_string += "".join([f"- [{data["name"]}]({data["url"]})\n" for data in live])
 
-    formatted_string += "\n"    # newline in between
+    formatted_string += "\n"
 
     formatted_string += "⛔ OFFLINE ⛔ \n"
-    formatted_string += "".join([f"{name}\n{url}\n" for (name, url) in not_live])
+    formatted_string += "".join([
+        f"{index + 1}. [{data["name"]}]({data["url"]}) " + 
+        (f"(last seen {datetime_to_discord_time_stamp(data["start_time"])}\n"
+            if datetime.now(timezone.utc) - data["start_time"] < timedelta(days=700) else "\n") for index, data in enumerate(not_live)
+    ])  # timedelta to avoid printing times without valid start_times
 
-    formatted_string += datetime_to_discord_time_stamp(datetime_now)
+    formatted_string += datetime_to_discord_time_stamp(datetime.now())
 
     return formatted_string
