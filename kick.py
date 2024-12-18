@@ -3,6 +3,7 @@ from playwright.async_api import async_playwright
 from database import add_or_update_streamer_db, get_is_live_status_db, async_session
 from utils import send_live_notification, create_embedding, read_streamers
 from logger_config import get_logger
+from datetime import datetime, timezone
 
 logger = get_logger(__name__)
 
@@ -37,7 +38,10 @@ async def get_all_kick_stream_status(client, streamers):
             # send embedding to channel
             if was_is_live == False and current_is_live == True:
                 embed = create_embedding(parsed_data, "Kick")
+                parsed_data['start_time'] = datetime.now(timezone.utc)
                 await send_live_notification(client, embed)
+            elif was_is_live == True and current_is_live == False:
+                parsed_data['start_time'] = datetime.now(timezone.utc)
 
             await add_or_update_streamer_db(async_session, parsed_data)
     except Exception as e:
