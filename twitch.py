@@ -7,6 +7,7 @@ import os
 from rich import print
 from database import add_or_update_streamer_db, get_is_live_status_db, get_twitch_profile_pic, async_session
 from utils import create_embedding, send_live_notification, read_streamers
+from datetime import datetime, timezone
 
 logger = get_logger(__name__)
 
@@ -100,10 +101,11 @@ async def get_all_twitch_stream_status(client, streamers):
             # send embedding to channel
             if was_is_live == False and current_is_live == True:
                 embed = create_embedding(parsed_data, "Twitch")
+                parsed_data['start_time'] = datetime.now(timezone.utc)
                 await send_live_notification(client, embed)
+            elif was_is_live == True and current_is_live == False:
+                parsed_data['start_time'] = datetime.now(timezone.utc)
 
-            if parsed_data['name'] != "N/A":
-                await add_or_update_streamer_db(async_session, parsed_data)
     except Exception as e:
         logger.error(f"Failed to get all twitch users - {e}")
 
