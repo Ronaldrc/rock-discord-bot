@@ -104,9 +104,9 @@ async def get_streamer_db(async_session : async_sessionmaker, data : json):
     except Exception as e:
         logger.error(f"Failed get_streamer_db: {e}")
 
-async def get_live_and_offline_streamers_db() -> tuple[dict, dict]:
-    live: list[tuple] = []
-    not_live: list[tuple] = []
+async def get_live_and_offline_streamers_db() -> tuple[list[dict], list[dict]]:
+    live: list[dict] = []
+    not_live: list[dict] = []
     try:
         # Select * from streamer
         async with async_session() as session:
@@ -116,13 +116,22 @@ async def get_live_and_offline_streamers_db() -> tuple[dict, dict]:
             for row in streamers:
                 streamer_obj = row[0]
                 if (streamer_obj.is_live == True):
-                    live.append((streamer_obj.name, streamer_obj.url))
+                    data = {
+                        "name" : streamer_obj.name,
+                        "url" : streamer_obj.url
+                    }
+                    live.append(data)
                 else:
-                    not_live.append((streamer_obj.name, streamer_obj.url))
+                    data = {
+                        "name" : streamer_obj.name,
+                        "start_time" : streamer_obj.start_time,
+                        "url" : streamer_obj.url
+                    }
+                    not_live.append(data)
 
         # sort by treating all letters as lowercase, without affecting original data
-        live.sort(key = lambda v: v[0].lower())
-        not_live.sort(key = lambda v: v[0].lower())
+        live.sort(key = lambda v: v["name"].lower())
+        not_live.sort(key = lambda v: v["name"].lower())
 
         return (live, not_live)
     except Exception as e:
