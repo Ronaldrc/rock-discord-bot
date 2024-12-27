@@ -1,12 +1,12 @@
 import requests
-from logger_config import get_logger
+from src.config.logger_config import get_logger
 import asyncio
 from urllib.parse import quote
 from dotenv import load_dotenv
 import os
 from rich import print
-from database import add_or_update_streamer_db, get_is_live_status_db, get_twitch_profile_pic, async_session
-from utils import create_embedding, send_live_notification, read_streamers
+from src.db.database import add_or_update_streamer_db, get_is_live_status_db, get_twitch_profile_pic, async_session
+from src.utils.utils import create_embedding, send_live_notification, read_streamers
 from datetime import datetime, timezone
 
 logger = get_logger(__name__)
@@ -84,7 +84,7 @@ async def get_all_twitch_stream_status(client, streamers):
 
             video_thumbnail = (data[0].get("thumbnail_url", "N/A") if data else "N/A")
             parsed_data = {
-                "name": (data[0].get('user_name') if data else "N/A"),
+                "name": name,
                 "title": (data[0].get('title', "N/A") if data else "N/A"),
                 "is_live": (True if data else False),
                 "stream_id": (data[0].get('stream_id', -1) if data else -1),  # not used in twitch streams! default -1
@@ -103,8 +103,11 @@ async def get_all_twitch_stream_status(client, streamers):
                 embed = create_embedding(parsed_data, "Twitch")
                 parsed_data['start_time'] = datetime.now(timezone.utc)
                 await send_live_notification(client, embed)
+                await add_or_update_streamer_db(async_session, parsed_data)
             elif was_is_live == True and current_is_live == False:
                 parsed_data['start_time'] = datetime.now(timezone.utc)
+
+            await add_or_update_streamer_db(async_session, parsed_data)
 
     except Exception as e:
         logger.error(f"Failed to get all twitch users - {e}")

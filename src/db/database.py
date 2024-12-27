@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import os
 import json
 import asyncio
-from logger_config import get_logger
+from src.config.logger_config import get_logger
 from rich import print
 
 logger = get_logger(__name__)
@@ -59,7 +59,7 @@ async def update_streamer_db(async_session : async_sessionmaker, data : json):
         async with async_session() as session:
             stmt = (
                 update(Streamer)
-                .where(Streamer.name == data['name'])
+                .where(Streamer.name.ilike(data.get('name')))
                 .values(**data)
             )
             await session.execute(stmt)
@@ -72,7 +72,7 @@ async def update_streamer_db(async_session : async_sessionmaker, data : json):
 async def add_or_update_streamer_db(async_session : async_sessionmaker, data : json):
     try:
         async with async_session() as session:
-            stmt = select(Streamer).where(Streamer.name == data.get('name'))
+            stmt = select(Streamer).where(Streamer.name.ilike(data.get('name')))
             result = await session.execute(stmt)
             streamer = result.scalar()
         if streamer:
@@ -85,7 +85,7 @@ async def add_or_update_streamer_db(async_session : async_sessionmaker, data : j
 async def get_streamer_db(async_session : async_sessionmaker, data : json):
     try:
         async with async_session() as session:
-            stmt = select(Streamer).where(Streamer.name == data.get('name'))
+            stmt = select(Streamer).where(Streamer.name.ilike(data.get('name')))
             result = await session.execute(stmt)
             streamer = result.scalars().first
         if streamer:
@@ -140,7 +140,7 @@ async def get_live_and_offline_streamers_db() -> tuple[list[dict], list[dict]]:
 async def get_is_live_status_db(async_session : async_sessionmaker, data : json):
     try:
         async with async_session() as session:
-            stmt = select(Streamer).where(Streamer.name == data.get('name'))
+            stmt = select(Streamer).where(Streamer.name.ilike(data.get('name')))
             result = await session.execute(stmt)
             streamer = result.scalar()
         if streamer:
@@ -153,7 +153,7 @@ async def get_is_live_status_db(async_session : async_sessionmaker, data : json)
 async def get_twitch_profile_pic(async_session : async_sessionmaker, data : json):
     try:
         async with async_session() as session:
-            stmt = select(Streamer).where(Streamer.name == data.get('name'))
+            stmt = select(Streamer).where(Streamer.name.ilike(data.get('name')))
             result = await session.execute(stmt)
             streamer = result.scalar()
         if streamer:

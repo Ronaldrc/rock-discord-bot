@@ -2,7 +2,7 @@ import discord
 from dotenv import load_dotenv
 import os
 import json
-from logger_config import get_logger
+from src.config.logger_config import get_logger
 from datetime import datetime, timedelta, timezone 
 
 logger = get_logger(__name__)

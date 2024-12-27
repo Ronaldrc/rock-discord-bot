@@ -1,8 +1,8 @@
 import asyncio
 from playwright.async_api import async_playwright
-from database import add_or_update_streamer_db, get_is_live_status_db, async_session
-from utils import send_live_notification, create_embedding, read_streamers
-from logger_config import get_logger
+from src.db.database import add_or_update_streamer_db, get_is_live_status_db, async_session
+from src.utils.utils import send_live_notification, create_embedding, read_streamers
+from src.config.logger_config import get_logger
 from datetime import datetime, timezone
 
 logger = get_logger(__name__)

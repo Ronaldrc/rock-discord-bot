@@ -2,13 +2,13 @@ import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 import os
-from kick import get_all_kick_stream_status, read_streamers
-from twitch import get_all_twitch_stream_status, update_user_access_token
-from database import get_live_and_offline_streamers_db
+from src.kick.kick import get_all_kick_stream_status, read_streamers
+from src.twitch.twitch import get_all_twitch_stream_status, update_user_access_token
+from src.db.database import get_live_and_offline_streamers_db
 import asyncio
-from logger_config import get_logger
+from src.config.logger_config import get_logger
 from datetime import datetime
-from utils import format_live_and_not_live_lists
+from src.utils.utils import format_live_and_not_live_lists
 
 logger = get_logger(__name__)
 
