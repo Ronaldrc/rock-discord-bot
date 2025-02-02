@@ -1,0 +1,264 @@
+{
+    "id": 18684516,
+    "user_id": 19651569,
+    "slug": "anoukska",
+    "is_banned": false,
+    "playback_url": "https://fa723fc1b171.us-west-2.playback.live-video.net/api/video/v1/us-west-2.196233775518.channel.jq5ASXZpWAr2.m3u8?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzM4NCJ9.eyJhd3M6Y2hhbm5lbC1hcm4iOiJhcm46YXdzOml2czp1cy13ZXN0LTI6MTk2MjMzNzc1NTE4OmNoYW5uZWwvanE1QVNYWnBXQXIyIiwiYXdzOmFjY2Vzcy1jb250cm9sLWFsbG93LW9yaWdpbiI6Imh0dHBzOi8va2ljay5jb20saHR0cHM6Ly93d3cuZ3N0YXRpYy5jb20saHR0cHM6Ly8qLmtpY2subGl2ZSxodHRwczovL3BsYXllci5raWNrLmNvbSxodHRwczovL2FkbWluLmtpY2suY29tLGh0dHBzOi8vYmV0YS5raWNrLmNvbSxodHRwczovL25leHQua2ljay5jb20saHR0cHM6Ly9kYXNoYm9hcmQua2ljay5jb20saHR0cHM6Ly8qLnByZXZpZXcua2ljay5jb20iLCJhd3M6c3RyaWN0LW9yaWdpbi1lbmZvcmNlbWVudCI6ZmFsc2UsImV4cCI6MTczNjg0MjMzNn0.tgXA0kM2Jb7q_52i3DlzewXI1_2M7P7iXcQe_h4T6yw6V8ALvwMczPPMmaG0Dj5kVrDW2dfpwVDn_m3njH70oop2XxtWDBLO9a-SaHWDJumled8Cy-MrG_Y753A8ksGH",
+    "vod_enabled": true,
+    "subscription_enabled": true,
+    "is_affiliate": false,
+    "followers_count": 273,
+    "subscriber_badges": [
+        {
+            "id": 268366,
+            "channel_id": 18684516,
+            "months": 1,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/268366/original"
+            }
+        },
+        {
+            "id": 268367,
+            "channel_id": 18684516,
+            "months": 2,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/268367/original"
+            }
+        },
+        {
+            "id": 268368,
+            "channel_id": 18684516,
+            "months": 3,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/268368/original"
+            }
+        },
+        {
+            "id": 268375,
+            "channel_id": 18684516,
+            "months": 6,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/268375/original"
+            }
+        },
+        {
+            "id": 268376,
+            "channel_id": 18684516,
+            "months": 9,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/268376/original"
+            }
+        },
+        {
+            "id": 268377,
+            "channel_id": 18684516,
+            "months": 12,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/268377/original"
+            }
+        },
+        {
+            "id": 268378,
+            "channel_id": 18684516,
+            "months": 18,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/268378/original"
+            }
+        },
+        {
+            "id": 268379,
+            "channel_id": 18684516,
+            "months": 24,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/268379/original"
+            }
+        },
+        {
+            "id": 268380,
+            "channel_id": 18684516,
+            "months": 30,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/268380/original"
+            }
+        },
+        {
+            "id": 268381,
+            "channel_id": 18684516,
+            "months": 36,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/268381/original"
+            }
+        },
+        {
+            "id": 268382,
+            "channel_id": 18684516,
+            "months": 42,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/268382/original"
+            }
+        },
+        {
+            "id": 268384,
+            "channel_id": 18684516,
+            "months": 48,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/268384/original"
+            }
+        },
+        {
+            "id": 268385,
+            "channel_id": 18684516,
+            "months": 54,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/268385/original"
+            }
+        },
+        {
+            "id": 268386,
+            "channel_id": 18684516,
+            "months": 60,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/268386/original"
+            }
+        },
+        {
+            "id": 268387,
+            "channel_id": 18684516,
+            "months": 66,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/268387/original"
+            }
+        },
+        {
+            "id": 306546,
+            "channel_id": 18684516,
+            "months": 72,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/306546/original"
+            }
+        },
+        {
+            "id": 268390,
+            "channel_id": 18684516,
+            "months": 78,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/268390/original"
+            }
+        },
+        {
+            "id": 268391,
+            "channel_id": 18684516,
+            "months": 84,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/268391/original"
+            }
+        },
+        {
+            "id": 268388,
+            "channel_id": 18684516,
+            "months": 90,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/268388/original"
+            }
+        },
+        {
+            "id": 268383,
+            "channel_id": 18684516,
+            "months": 96,
+            "badge_image": {
+                "srcset": "",
+                "src": "https://files.kick.com/channel_subscriber_badges/268383/original"
+            }
+        }
+    ],
+    "banner_image": {
+        "url": "https://files.kick.com/images/channel/18684516/banner_image/a1045338-d3e1-4608-bd63-68a420d65c93"
+    },
+    "livestream": null,
+    "role": null,
+    "muted": false,
+    "follower_badges": [],
+    "offline_banner_image": {
+        "src": "https://files.kick.com/images/channel/18684516/offline_banner/conversion/445c81de-4b47-4642-a73d-79349163e97c-fullsize.jpg",
+        "srcset": "https://files.kick.com/images/channel/18684516/offline_banner/responsives/445c81de-4b47-4642-a73d-79349163e97c___fullsize_1200_674.webp 1200w, https://files.kick.com/images/channel/18684516/offline_banner/responsives/445c81de-4b47-4642-a73d-79349163e97c___fullsize_1003_563.webp 1003w, https://files.kick.com/images/channel/18684516/offline_banner/responsives/445c81de-4b47-4642-a73d-79349163e97c___fullsize_839_471.webp 839w, https://files.kick.com/images/channel/18684516/offline_banner/responsives/445c81de-4b47-4642-a73d-79349163e97c___fullsize_702_394.webp 702w, https://files.kick.com/images/channel/18684516/offline_banner/responsives/445c81de-4b47-4642-a73d-79349163e97c___fullsize_588_330.webp 588w, https://files.kick.com/images/channel/18684516/offline_banner/responsives/445c81de-4b47-4642-a73d-79349163e97c___fullsize_491_276.webp 491w, https://files.kick.com/images/channel/18684516/offline_banner/responsives/445c81de-4b47-4642-a73d-79349163e97c___fullsize_411_231.webp 411w, https://files.kick.com/images/channel/18684516/offline_banner/responsives/445c81de-4b47-4642-a73d-79349163e97c___fullsize_344_193.webp 344w, data:image/svg+xml;base64,PCFET0NUWVBFIHN2ZyBQVUJMSUMgIi0vL1czQy8vRFREIFNWRyAxLjEvL0VOIiAiaHR0cDovL3d3dy53My5vcmcvR3JhcGhpY3MvU1ZHLzEuMS9EVEQvc3ZnMTEuZHRkIj4KPHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjAiCiB5PSIwIiB2aWV3Qm94PSIwIDAgMTIwMCA2NzQiPgoJPGltYWdlIHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NCIgeGxpbms6aHJlZj0iZGF0YTppbWFnZS9qcGVnO2Jhc2U2NCwvOWovNEFBUVNrWkpSZ0FCQVFFQVlBQmdBQUQvL2dBN1ExSkZRVlJQVWpvZ1oyUXRhbkJsWnlCMk1TNHdJQ2gxYzJsdVp5QkpTa2NnU2xCRlJ5QjJPREFwTENCeGRXRnNhWFI1SUQwZ09UQUsvOXNBUXdBREFnSURBZ0lEQXdNREJBTURCQVVJQlFVRUJBVUtCd2NHQ0F3S0RBd0xDZ3NMRFE0U0VBME9FUTRMQ3hBV0VCRVRGQlVWRlF3UEZ4Z1dGQmdTRkJVVS85c0FRd0VEQkFRRkJBVUpCUVVKRkEwTERSUVVGQlFVRkJRVUZCUVVGQlFVRkJRVUZCUVVGQlFVRkJRVUZCUVVGQlFVRkJRVUZCUVVGQlFVRkJRVUZCUVVGQlFVLzhBQUVRZ0FFZ0FnQXdFaUFBSVJBUU1SQWYvRUFCOEFBQUVGQVFFQkFRRUJBQUFBQUFBQUFBQUJBZ01FQlFZSENBa0tDLy9FQUxVUUFBSUJBd01DQkFNRkJRUUVBQUFCZlFFQ0F3QUVFUVVTSVRGQkJoTlJZUWNpY1JReWdaR2hDQ05Dc2NFVlV0SHdKRE5pY29JSkNoWVhHQmthSlNZbktDa3FORFUyTnpnNU9rTkVSVVpIU0VsS1UxUlZWbGRZV1ZwalpHVm1aMmhwYW5OMGRYWjNlSGw2ZzRTRmhvZUlpWXFTazVTVmxwZVltWnFpbzZTbHBxZW9xYXF5czdTMXRyZTR1YnJDdzhURnhzZkl5Y3JTMDlUVjF0ZlkyZHJoNHVQazVlYm42T25xOGZMejlQWDI5L2o1K3YvRUFCOEJBQU1CQVFFQkFRRUJBUUVBQUFBQUFBQUJBZ01FQlFZSENBa0tDLy9FQUxVUkFBSUJBZ1FFQXdRSEJRUUVBQUVDZHdBQkFnTVJCQVVoTVFZU1FWRUhZWEVUSWpLQkNCUkNrYUd4d1Frak0xTHdGV0p5MFFvV0pEVGhKZkVYR0JrYUppY29LU28xTmpjNE9UcERSRVZHUjBoSlNsTlVWVlpYV0ZsYVkyUmxabWRvYVdwemRIVjJkM2g1ZW9LRGhJV0doNGlKaXBLVGxKV1dsNWlabXFLanBLV21wNmlwcXJLenRMVzJ0N2k1dXNMRHhNWEd4OGpKeXRMVDFOWFcxOWpaMnVMajVPWG01K2pwNnZMejlQWDI5L2o1K3YvYUFBd0RBUUFDRVFNUkFEOEErSHZCK2hYT3JReXlRb3dDakl4Vk9GTDFOU2toYUptWlc1NHIwNzROYXBwNjZiTXR6TWtES3B3RDNwOWxCYURYYnFZN1BLY241alg2OXcvZzhSSE1jUk9hYWdZWTEwRmc2YmhPODMwTkR3cjRVdmZHR2x3MjlzaGpLSE5QdmYyZU5ROFRheUlyeC9LaFFZTE54WFJmRC80cDZGNE8xSm81V0RZUEJGVnZpeiswYlo3OGFhNVFucVZyNnF0Um5XbnkxVmFINUh6TkN2Vit0VHB5aTFGYlB1ZlBXanV5YWtBckVEUFFHdXQxcDJTMitWaXZIWTBVVjYrRy9nTXQvd0FSSERiMk4wU1NTYyt0WkhpRWt5OG5ORkZSalA4QWQyZWl2aVovLzlrPSI+Cgk8L2ltYWdlPgo8L3N2Zz4= 32w"
+    },
+    "verified": false,
+    "recent_categories": [
+        {
+            "id": 76,
+            "category_id": 1,
+            "name": "Runescape",
+            "slug": "runescape",
+            "tags": [
+                "RPG"
+            ],
+            "description": null,
+            "deleted_at": null,
+            "viewers": 8,
+            "is_mature": false,
+            "banner": {
+                "responsive": "https://files.kick.com/images/subcategories/76/banner/responsives/62364ae9-b81a-492d-8764-d701a58f52f6___banner_600_800.webp 600w, https://files.kick.com/images/subcategories/76/banner/responsives/62364ae9-b81a-492d-8764-d701a58f52f6___banner_501_668.webp 501w, https://files.kick.com/images/subcategories/76/banner/responsives/62364ae9-b81a-492d-8764-d701a58f52f6___banner_419_559.webp 419w, https://files.kick.com/images/subcategories/76/banner/responsives/62364ae9-b81a-492d-8764-d701a58f52f6___banner_351_468.webp 351w, https://files.kick.com/images/subcategories/76/banner/responsives/62364ae9-b81a-492d-8764-d701a58f52f6___banner_293_391.webp 293w, https://files.kick.com/images/subcategories/76/banner/responsives/62364ae9-b81a-492d-8764-d701a58f52f6___banner_245_327.webp 245w, https://files.kick.com/images/subcategories/76/banner/responsives/62364ae9-b81a-492d-8764-d701a58f52f6___banner_205_273.webp 205w, data:image/svg+xml;base64,PCFET0NUWVBFIHN2ZyBQVUJMSUMgIi0vL1czQy8vRFREIFNWRyAxLjEvL0VOIiAiaHR0cDovL3d3dy53My5vcmcvR3JhcGhpY3MvU1ZHLzEuMS9EVEQvc3ZnMTEuZHRkIj4KPHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjAiCiB5PSIwIiB2aWV3Qm94PSIwIDAgNjAwIDgwMCI+Cgk8aW1hZ2Ugd2lkdGg9IjYwMCIgaGVpZ2h0PSI4MDAiIHhsaW5rOmhyZWY9ImRhdGE6aW1hZ2UvanBlZztiYXNlNjQsLzlqLzRBQVFTa1pKUmdBQkFRRUFZQUJnQUFELy9nQTdRMUpGUVZSUFVqb2daMlF0YW5CbFp5QjJNUzR3SUNoMWMybHVaeUJKU2tjZ1NsQkZSeUIyT0RBcExDQnhkV0ZzYVhSNUlEMGdPVEFLLzlzQVF3QURBZ0lEQWdJREF3TURCQU1EQkFVSUJRVUVCQVVLQndjR0NBd0tEQXdMQ2dzTERRNFNFQTBPRVE0TEN4QVdFQkVURkJVVkZRd1BGeGdXRkJnU0ZCVVUvOXNBUXdFREJBUUZCQVVKQlFVSkZBMExEUlFVRkJRVUZCUVVGQlFVRkJRVUZCUVVGQlFVRkJRVUZCUVVGQlFVRkJRVUZCUVVGQlFVRkJRVUZCUVVGQlFVRkJRVS84QUFFUWdBS3dBZ0F3RWlBQUlSQVFNUkFmL0VBQjhBQUFFRkFRRUJBUUVCQUFBQUFBQUFBQUFCQWdNRUJRWUhDQWtLQy8vRUFMVVFBQUlCQXdNQ0JBTUZCUVFFQUFBQmZRRUNBd0FFRVFVU0lURkJCaE5SWVFjaWNSUXlnWkdoQ0NOQ3NjRVZVdEh3SkROaWNvSUpDaFlYR0JrYUpTWW5LQ2txTkRVMk56ZzVPa05FUlVaSFNFbEtVMVJWVmxkWVdWcGpaR1ZtWjJocGFuTjBkWFozZUhsNmc0U0Zob2VJaVlxU2s1U1ZscGVZbVpxaW82U2xwcWVvcWFxeXM3UzF0cmU0dWJyQ3c4VEZ4c2ZJeWNyUzA5VFYxdGZZMmRyaDR1UGs1ZWJuNk9ucThmTHo5UFgyOS9qNSt2L0VBQjhCQUFNQkFRRUJBUUVCQVFFQUFBQUFBQUFCQWdNRUJRWUhDQWtLQy8vRUFMVVJBQUlCQWdRRUF3UUhCUVFFQUFFQ2R3QUJBZ01SQkFVaE1RWVNRVkVIWVhFVElqS0JDQlJDa2FHeHdRa2pNMUx3RldKeTBRb1dKRFRoSmZFWEdCa2FKaWNvS1NvMU5qYzRPVHBEUkVWR1IwaEpTbE5VVlZaWFdGbGFZMlJsWm1kb2FXcHpkSFYyZDNoNWVvS0RoSVdHaDRpSmlwS1RsSldXbDVpWm1xS2pwS1dtcDZpcHFyS3p0TFcydDdpNXVzTER4TVhHeDhqSnl0TFQxTlhXMTlqWjJ1TGo1T1htNStqcDZ2THo5UFgyOS9qNSt2L2FBQXdEQVFBQ0VRTVJBRDhBK1RZZkdTNllmMzhES2ZwWHIzN09malRRL0VuamVDMnZGSGw1NXpYbVBpMjcwZVhTNUZZSjU3REF4WEcvRG1XNDhPYSt0NWF1Vk83SUlyNjdNTVJXd2FWT0U3cG41QmdmcTFhbEt0VnB0TkgyYiswL28rZzZiZFFTYWZ0QVplY0d2bWw0NExoMjJISXJyUEVtc2FoNHNNYjNjek91TURKcU9Id1lkTjA3N1R2VWh1Y0dyeXpGWWpFeTlpMXAzWngwNkVjeXhiaGcxN3oyV3g4NnJmUzZqck1ZbVlsQ2VsZTFlRC9COE45TEFZR0hPTWl2UGJmd0JxTUVpWEQyejdEMElGZDU0VHVyL1FydUoxaGtJQkhhc3NOVGpLOGFxdmRuMGVZWWhyQXlvVVlxNTZ0cW53MHZiZXpqZEFTTVpHSzVUWGJUV1liUXdNcHdPQlhxdWwvRVNXKzBsSTVvOXJBWTVGY0I0NXVyOUFidU5XYUgycjFuR2xUZDRPeDhEbHYxNmpQV0cycWZZMS9EZnhEOFAvMlRIYTNsdWpPQjFJcTlkZU8vQzhjWVpiU01GZlFkYStmeHgwNHArNGtja21zdnFrTzU5TThkUHNldndmRUhTci9WeUJBSTRlZ0hhdG5VZkVXbTNHbHlyS1UyWStWYThIVmlwQkJ3YXVHNGtaQUM3RWU1cWxoSVh2Y24rMGFpamF4Ly85az0iPgoJPC9pbWFnZT4KPC9zdmc+ 32w",
+                "url": "https://files.kick.com/images/subcategories/76/banner/62364ae9-b81a-492d-8764-d701a58f52f6"
+            },
+            "category": {
+                "id": 1,
+                "name": "Games",
+                "slug": "games",
+                "icon": "🕹️"
+            }
+        }
+    ],
+    "can_host": true,
+    "user": {
+        "id": 19651569,
+        "username": "Anoukska",
+        "agreed_to_terms": true,
+        "email_verified_at": "2023-09-17T17:10:09.000000Z",
+        "bio": "[7TV:05517aaa0352735b302d50cfd9659941]",
+        "country": null,
+        "state": null,
+        "city": null,
+        "instagram": "",
+        "twitter": "",
+        "youtube": "",
+        "discord": "",
+        "tiktok": "",
+        "facebook": "",
+        "profile_pic": "https://files.kick.com/images/user/19651569/profile_image/conversion/8e70ba2e-f20c-43a1-adcf-28936d34389d-fullsize.webp"
+    },
+    "chatroom": {
+        "id": 18424398,
+        "chatable_type": "App\\Models\\Channel",
+        "channel_id": 18684516,
+        "created_at": "2023-09-17T17:10:09.000000Z",
+        "updated_at": "2023-09-17T17:10:09.000000Z",
+        "chat_mode_old": "public",
+        "chat_mode": "public",
+        "slow_mode": false,
+        "chatable_id": 18684516,
+        "followers_mode": false,
+        "subscribers_mode": false,
+        "emotes_mode": false,
+        "message_interval": 0,
+        "following_min_duration": 0
+    }
+}
