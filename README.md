@@ -14,7 +14,7 @@ Within 1 minute of your favorite streamer going live...
 
 Kick currently lacks an API readily available for users. Therefore, Kick websites are webscraped.
 Twitch has a public API, so calls are made to receive streamer information.
-All information is stored in a PostgreSQL docker container.
+All information is stored in PostgreSQL, which is inside a docker container.
 
 # Demo
 

@@ -4,4 +4,6 @@ SQLAlchemy
 psycopg2
 asyncpg
 requests
+flake8
 rich
+aiohttp
