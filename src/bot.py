@@ -45,7 +45,9 @@ from webhooks.webhooks import (
     extractRSN,
     extractDrop,
     extractLootValue,
-    extractTimeInSeconds
+    extractTimeInSeconds,
+    checkForBingoDrop,
+    extractBoss
 )
 
 from rich import print
@@ -110,24 +112,22 @@ async def on_message(message: discord.Message):
     # send message to appropriate channel via webhook
     category = None
     if message.channel.id == GAME_CHAT_CHANNEL_ID:
-        # print(message.content)
-
         # <:TaskMastericon:1147705076677345322>ScytheMane has completed the Hard Kandarin diary.
         #   Remove the prefix, <:TaskMastericon:1147705076677345322>
+        no_emoji_message = no_emoji_message.replace('\\', '')
         emoji_end_index = message.content.find(">")
         if emoji_end_index:
             # no_emoji_message is ScytheMane has completed the Hard Kandarin diary.
             no_emoji_message = message.content[emoji_end_index + 1:]
-            no_emoji_message = no_emoji_message.replace('\\', '')
-
-            # print(f"no_emoji_message is: {no_emoji_message}")
 
             content_dict = getMessageCategory(no_emoji_message)
-
+            content_dict = checkForBingoDrop(no_emoji_message, content_dict)
+            
             if content_dict:
                 webhook_url = content_dict.get('url', None)
                 coded_message = content_dict.get('message', None)  # has new prefix emoji
                 category = content_dict.get('category', None)
+                isBingo = content_dict.get('isBingo', False)
                 # print(f"coded_message is: {coded_message}")
 
                 # If valid category and webhook_url is valid
@@ -138,11 +138,6 @@ async def on_message(message: discord.Message):
                 #     )
                 # except Exception as e:
                 #     logger.error(f"Failed to send content to webhook - {e}")
-
-        # extract from no_emoji_message
-        #   personal-best
-        #   pks
-        #   drops
 
         # Send relevant information to database
         if category == MessageCategory.PK:
@@ -173,19 +168,6 @@ async def on_message(message: discord.Message):
                 "loot_big_int": int(loot_string)
             }
             await insert_drop_db(async_session, data)
-
-            # value = await get_drop_sum_values_db(
-            #     async_session,
-            #     data
-            # )
-
-            # values = await get_all_drop_sum_values_db(async_session, 15)
-            # if values:
-            #     for value in values:
-            #         rsn = value[0]
-            #         sum = value[1]
-            #         print(f"{rsn} has a total loot value of {sum}")
-
         elif category == MessageCategory.PERSONAL_BEST:
             # send to database
             data = {
@@ -193,6 +175,10 @@ async def on_message(message: discord.Message):
                 "duration": extractTimeInSeconds(no_emoji_message)
             }
             await insert_personal_best_db(async_session, data)
+
+        # Always send content to bingo-drops
+        if isBingo:
+            print(f"Yes bingo drop! Sending to webhook bingo-drops...")
 
 
 @tasks.loop(seconds=3600)  # every hour
