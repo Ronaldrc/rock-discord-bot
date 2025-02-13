@@ -53,7 +53,7 @@ async def sendContentToWebhook(webhook_url: str, message: str) -> None:
 
 def getMessageCategory(fullStringNoDate: str) -> dict | None:
     """
-        Determine the appropriate webhook url, message, and 
+        Determine the appropriate webhook url, message, and
         MessageCategory from an in-game message
 
         Example of an in-game message:
@@ -134,8 +134,9 @@ def getMessageCategory(fullStringNoDate: str) -> dict | None:
         content_dict = {
             "url" : url,
             "message" : prefix+" "+fullStringNoDate,
-            "category" : messageCategory
+            "category" : messageCategory,
         }
+
     elif colonCounter==0 and substringLevel in fullStringNoDate:
         prefix=":partying_face:"
 
@@ -213,7 +214,7 @@ def getMessageCategory(fullStringNoDate: str) -> dict | None:
         messageCategory = MessageCategory.LEFT
 
         # removed webhook=line
-        return {
+        content_dict = {
             "url" : url,
             "message" : prefix+" "+fullStringNoDate,
             "category" : messageCategory
@@ -277,6 +278,78 @@ def getMessageCategory(fullStringNoDate: str) -> dict | None:
     # elif (colonCounter==1) and (fullStringNoDate.index(':')<=12):
     # if it made it this far, message is a chatg message sent by a player
 
+    # BINGO
+        #   Check for
+        #   fang, 2 cox weapons, tome of fire, full moons set
+    if content_dict:
+        bingo_drops = [
+            # 3 fangs
+            "Osmumten's fang",
+            # 2 Cox weapons
+            "Twisted buckler", "Dragon hunter crossbow",
+            "Dinh's bulwark", "Dragon claws", "Elder maul", "Kodai insignia",
+            "Twisted bow",
+            # Tome of fire
+            "Tome of fire",
+            # A full moons set
+            "Eclipse atlatl", "Eclipse moon helm", "Eclipse moon chestplate",
+            "Eclipse moon tassets",
+            "Dual macuahuitl", "Blood moon helm", "Blood moon chestplate",
+            "Blood moon tassets",
+            "Blue moon spear", "Blue moon helm", "Blue moon chestplate",
+            "Blue moon tassets",
+            # Medium clue boots
+            "Ranger boots", "Wizard boots", "Holy sandals", "Spiked manacles",
+            "Climbing boots (g)"
+            # Any full godsword
+            "Godsword shard", "Ancient hilt", "Armadyl hilt", "Bandos hilt",
+            "Saradomin hilt", "Zamorak hilt"
+            # Master clue ornament kit
+            "Occult ornament kit", "Torture ornament kit", "Anguish ornament kit",
+            "Tormented ornament kit", "Dragon defender ornament kit",
+            "Armadyl godsword ornament kit", "Bandos godsword ornament kit",
+            "Saradomin godsword ornament kit", "Zamorak godsword ornament kit",
+            "Dragon platebody ornament kit", "Dragon kiteshield ornament kit",
+            # Any vestige
+            "vestige",
+            # Any rev weapon
+            "Craw's bow", "Thammaron's sceptre", "Viggora's chainmace",
+            # Scurrius pet
+            "Scurry",
+            # 2 Nex drops
+            "Zaryte vambraces", "Nihil horn", "Torva full helm (damaged)",
+            "Torva platebody (damaged)", "Torva platelegs (damaged)",
+            "Ancient hilt",
+            # Zolcano item
+            "Crystal tool seed", "Zalcano shard", "Smolcano",
+            # Master wand
+            "Master wand"
+            # 2 obby armor pieces
+            "Obsidian helmet", "Obsidian platebody", "Obsidian platelegs",
+            "Toktz-ket-xil", "Obsidian cape",
+            # All 3 zulrah OR mutagen
+            "mutagen", "Tanzanite fang", "Magic fang", "Serpentine visage",
+            # Corp sigil
+            "Arcane sigil", "Elysian sigil", "Spectral sigil",
+            # Moxy or Huberte pet
+            "Moxi", "Huberte",
+            # Mole slippers
+            "Mole slippers",
+            # Noxious hally - 3 pieces
+            "Noxious point", "Noxious blade", "Noxious pommel",
+            # Cerb crystal
+            "Primordial crystal", "Pegasian crystal", "Eternal crystal",
+            "Smouldering stone",
+            # 3 aranea boots
+            "Aranea boots",
+            # Earth warrior champion scroll
+            "Earth warrior champion scroll",
+            # Teleport anchoring scroll
+            "Teleport anchoring scroll",
+            # Golden tench
+            "Golden tench"
+        ]
+
     return content_dict if content_dict else None
 
 
@@ -336,16 +409,36 @@ def extractRSN(ccMessageNoDate: str, messageCategory: MessageCategory) -> str:
     return rsn
 
 
+def extractBoss(ccMessageNoDate: str, messageCategory: MessageCategory) -> str:
+    # Example of ccMessageNoDate is below:
+        # steamyplank has achieved a new Zulrah personal best: 1:35
+        # Moose World has achieved a new Tombs of Amascut (team size: 5) Expert mode Overall personal best: 29:43
+    if messageCategory == MessageCategory.PERSONAL_BEST:
+        boss_start_index = ccMessageNoDate.index("has achieved a new ") + 19
+        boss_end_index = ccMessageNoDate.index(" personal best:")
+        result = ccMessageNoDate[boss_start_index: boss_end_index]
+        return result
+    else:
+        return None
+
+
 def extractDrop(ccMessageNoDate: str, messageCategory: MessageCategory) -> str | None:
     # Example of ccMessageNoDate is below:
     #   Dooxsi received special loot from a raid: Masori chaps (210,133,947 coins).   [2022-09-27]
+    #   BigBossHoss received special loot from a raid: Osmumten's fang.
 
     # Value is within parantheses
-    if messageCategory == MessageCategory.DROP and '(' in ccMessageNoDate:
-        match = re.search(r':\s*(.*?)\s*\(', ccMessageNoDate)
-        if match:
-            result = match.group(1)
-            return result
+    if messageCategory == MessageCategory.DROP:
+        if '(' in ccMessageNoDate:
+            match = re.search(r':\s*(.*?)\s*\(', ccMessageNoDate)
+            if match:
+                result = match.group(1)
+                return result
+        else:
+            # There are no parentheses in the message
+            #   Instead, extract from colon + 2 to . - 1
+            result = ccMessageNoDate[ccMessageNoDate.index(':') + 2: -1]
+            return result    # exclude last charater
     return None
 
 
@@ -358,22 +451,25 @@ def extractLootValue(ccMessageNoDate: str, messageCategory: MessageCategory) -> 
     # check if a character before ) is 's' for coin's' in string
     # else remove (unf) or (10) or (full) and then check for coins
     if messageCategory == MessageCategory.PK or MessageCategory.DROP:
-        if(ccMessageNoDate[ccMessageNoDate.index('(')+1].isdigit()) and ccMessageNoDate[ccMessageNoDate.index(')')-1]=='s':
-            coinsBeginIndex = ccMessageNoDate.index('(')+1
-            coinsEndingIndex = ccMessageNoDate.index(')')-6 #subtract "coins" str length
-            coinsStr = ccMessageNoDate[coinsBeginIndex:coinsEndingIndex]
-        else:
-            #find index of first ')'
-            firstEndParenIndex = ccMessageNoDate.index(')')
-            #substring everything after, to make it a normal string with just one set of (coins) paren
-            ccMessageNoDate = ccMessageNoDate[firstEndParenIndex+1:]
-            #standard parse coins
-            coinsBeginIndex = ccMessageNoDate.index('(')+1
-            coinsEndingIndex = ccMessageNoDate.index(')')-6 #subtract "coins" str length
-            coinsStr = ccMessageNoDate[coinsBeginIndex:coinsEndingIndex]
-        return coinsStr.replace(',', '')
+        try:
+            if(ccMessageNoDate[ccMessageNoDate.index('(')+1].isdigit()) and ccMessageNoDate[ccMessageNoDate.index(')')-1]=='s':
+                coinsBeginIndex = ccMessageNoDate.index('(')+1
+                coinsEndingIndex = ccMessageNoDate.index(')')-6 #subtract "coins" str length
+                coinsStr = ccMessageNoDate[coinsBeginIndex:coinsEndingIndex]
+            else:
+                #find index of first ')'
+                firstEndParenIndex = ccMessageNoDate.index(')')
+                #substring everything after, to make it a normal string with just one set of (coins) paren
+                ccMessageNoDate = ccMessageNoDate[firstEndParenIndex+1:]
+                #standard parse coins
+                coinsBeginIndex = ccMessageNoDate.index('(')+1
+                coinsEndingIndex = ccMessageNoDate.index(')')-6 #subtract "coins" str length
+                coinsStr = ccMessageNoDate[coinsBeginIndex:coinsEndingIndex]
+            return coinsStr.replace(',', '')
+        except ValueError as e:
+            return "0"
     else:
-        return None
+        return "0"
 
 
 def extractTimeInSeconds(ccMessageNoDate: str) -> str:
@@ -396,3 +492,158 @@ def extractTimeInSeconds(ccMessageNoDate: str) -> str:
     #0:10
     #0:10.8
     return pbTimeSeconds
+
+def checkForBingoDrop(fullStringNoDate: str, content_dict: dict):
+    """
+        Determine the appropriate webhook url, message, and
+        MessageCategory from an in-game message
+
+        Example of an in-game message:
+            <:TaskMastericon:1147705076677345322>
+            ScytheMane has completed the Hard Kandarin diary\.
+
+        Parameters
+        ----------
+        fullStringNoDate: str
+            Runescape message without the preceding emoji
+
+        Returns
+        -------
+        dict
+            The webhook url, message, and MessageCategory as a dictionary
+    """
+    if content_dict:
+        content_dict["isBingo"] = False  # default value
+
+        bingo_drops = [
+            # 3 fangs
+            "Osmumten's fang",
+            # 2 Cox weapons
+            "Dragon hunter crossbow",
+            "Dinh's bulwark", "Dragon claws", "Elder maul", "Kodai insignia",
+            "Twisted bow",
+            # Tome of fire
+            "Tome of fire",
+            # A full moons set
+            "Eclipse atlatl", "Eclipse moon helm", "Eclipse moon chestplate",
+            "Eclipse moon tassets",
+            "Dual macuahuitl", "Blood moon helm", "Blood moon chestplate",
+            "Blood moon tassets",
+            "Blue moon spear", "Blue moon helm", "Blue moon chestplate",
+            "Blue moon tassets",
+            # Medium clue boots
+            "Ranger boots", "Wizard boots", "Holy sandals", "Spiked manacles",
+            "Climbing boots (g)",
+            # Any full godsword
+            "Godsword shard", "Ancient hilt", "Armadyl hilt", "Bandos hilt",
+            "Saradomin hilt", "Zamorak hilt",
+            # Master clue ornament kit
+            "Occult ornament kit", "Torture ornament kit", "Anguish ornament kit",
+            "Tormented ornament kit", "Dragon defender ornament kit",
+            "Armadyl godsword ornament kit", "Bandos godsword ornament kit",
+            "Saradomin godsword ornament kit", "Zamorak godsword ornament kit",
+            "Dragon platebody ornament kit", "Dragon kiteshield ornament kit",
+            # Any vestige
+            "vestige",
+            # Any rev weapon
+            "Craw's bow", "Thammaron's sceptre", "Viggora's chainmace",
+            # Scurrius pet
+            "Scurry",
+            # 2 Nex drops
+            "Zaryte vambraces", "Nihil horn", "Torva full helm (damaged)",
+            "Torva platebody (damaged)", "Torva platelegs (damaged)",
+            "Ancient hilt",
+            # Zolcano item
+            "Crystal tool seed", "Zalcano shard", "Smolcano",
+            # Master wand
+            "Master wand",
+            # 2 obby armor pieces
+            "Obsidian helmet", "Obsidian platebody", "Obsidian platelegs",
+            # All 3 zulrah OR mutagen
+            "Magma mutagen", "Tanzanite mutagen",
+            "Tanzanite fang", "Magic fang", "Serpentine visage",
+            # Corp sigil
+            "Arcane sigil", "Elysian sigil", "Spectral sigil",
+            # Moxy or Huberte pet
+            "Moxi", "Huberte",
+            # Mole slippers
+            "Mole slippers",
+            # Noxious hally - 3 pieces
+            "Noxious point", "Noxious blade", "Noxious pommel",
+            # Cerb crystal
+            "Primordial crystal", "Pegasian crystal", "Eternal crystal",
+            "Smouldering stone",
+            # 3 aranea boots
+            "Aranea boots",
+            # Earth warrior champion scroll
+            "Earth warrior champion scroll",
+            # Teleport anchoring scroll
+            "Teleport anchoring scroll",
+            # Golden tench
+            "Golden tench",
+            # Merfolk trident
+            "Merfolk trident",
+        ]
+        # 18 names including dabbd out, which is not explicitly written
+        team_j22 = [
+            "420Caveman",
+            "BigBossHoss",
+            "Damonster1",
+            "HC-Chyne",
+            "Hunglllef",
+            "Iron H E R B",
+            "J-22",
+            "jibbuh",
+            "Pl0uneR0yale",
+            "ryanlul",
+            "Saucemanchie",
+            "Spahrten",
+            "steamyplank",
+            "Ur left nut",
+            "yea im jebus",
+            "GART0U",
+            "m8t",
+        ]
+        # 18 names with little rat
+        team_vendirz = [
+            "Cheeky",
+            "elf on duty",
+            "JacobPiment",
+            "K l W l",
+            "Little Rat",
+            "MarlinMerlin",
+            "Mike Kent",
+            "Nokowt",
+            "Plankforpurp",
+            "Schm0ke",
+            "ThatGuyHarm",
+            "Toxic Suns",
+            "turbo_z31",
+            "UlfhednarTaz",
+            "Vendirzy", # included both vendirz name since not sure which is being used for bingo
+            "vendirz",
+            "Waterri",
+            "X x o xx",
+            "Little Rat",
+        ]
+
+        # Determine if drop is bingo-related
+        for drop in bingo_drops:
+            if drop in fullStringNoDate:
+                content_dict["isBingo"] = True
+                break
+
+        # Now determine team - j22 or vendirz
+        for name in team_j22:
+            if name in fullStringNoDate:
+                # send to j22 drop webhook
+                content_dict["bingoTeam"] = "j22"
+                return content_dict
+
+        for name in team_vendirz:
+            if name in fullStringNoDate:
+                # send to vendirz drop webhook
+                content_dict["bingoTeam"] = "vendirz"
+                return content_dict
+
+    return content_dict
