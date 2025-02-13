@@ -46,6 +46,7 @@ class PersonalBest(Base):
     id = Column(Integer, primary_key=True)
     rsn = Column(String(15))
     date = Column(DateTime(timezone=True), server_default=func.now())
+    boss = Column(String(70))
     duration = Column(Float)
 
 
