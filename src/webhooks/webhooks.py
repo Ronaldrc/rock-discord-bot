@@ -372,18 +372,6 @@ def extractRSN(ccMessageNoDate: str, messageCategory: MessageCategory) -> str:
     """
 
     rsn = ""
-    # if (messageCategory == "chatjoincount") or (messageCategory == "chatjoinlast"):
-    #     #<img=107><col=7f0000>Andytheking has joined.</col>
-    #     rsn = ccMessageNoDate.strip()
-    #     #loop around , remove <><>rsn:<> but don't remove last <>
-    #     while '>' in rsn and rsn.index('>')<(len(rsn)-1):
-    #         bracketIndex = rsn.index(">")
-    #         #substring eveerything after > and repeat
-    #         rsn = rsn[bracketIndex+1:]
-    #     #rsn =Andytheking has joined.</col>
-    #     #print('rsn is:'+rsn)
-    #     endingIndex = rsn.index("has joined")-1
-    #     rsn = rsn[0:endingIndex]
     if messageCategory == MessageCategory.PK:
         defeatedIndex = ccMessageNoDate.index("defeated")
         rsn = ccMessageNoDate[0:defeatedIndex-5]
@@ -442,7 +430,7 @@ def extractDrop(ccMessageNoDate: str, messageCategory: MessageCategory) -> str |
     return None
 
 
-def extractLootValue(ccMessageNoDate: str, messageCategory: MessageCategory) -> str | None:
+async def extractLootValue(ccMessageNoDate: str, messageCategory: MessageCategory) -> str | None:
     """
         Extracts the value from messages that are 
         MessageCategory.PK or MessageCategory.DROP
@@ -450,21 +438,80 @@ def extractLootValue(ccMessageNoDate: str, messageCategory: MessageCategory) -> 
     # check if character after ( is a digit
     # check if a character before ) is 's' for coin's' in string
     # else remove (unf) or (10) or (full) and then check for coins
-    if messageCategory == MessageCategory.PK or MessageCategory.DROP:
+    if messageCategory == MessageCategory.PK or messageCategory == MessageCategory.DROP:
         try:
-            if(ccMessageNoDate[ccMessageNoDate.index('(')+1].isdigit()) and ccMessageNoDate[ccMessageNoDate.index(')')-1]=='s':
-                coinsBeginIndex = ccMessageNoDate.index('(')+1
-                coinsEndingIndex = ccMessageNoDate.index(')')-6 #subtract "coins" str length
-                coinsStr = ccMessageNoDate[coinsBeginIndex:coinsEndingIndex]
+            if "(" in ccMessageNoDate:
+                # has parentheses
+                if(ccMessageNoDate[ccMessageNoDate.index('(')+1].isdigit()) and ccMessageNoDate[ccMessageNoDate.index(')')-1]=='s':
+                    coinsBeginIndex = ccMessageNoDate.index('(')+1
+                    coinsEndingIndex = ccMessageNoDate.index(')')-6 #subtract "coins" str length
+                    coinsStr = ccMessageNoDate[coinsBeginIndex:coinsEndingIndex]
+                else:
+                    #find index of first ')'
+                    firstEndParenIndex = ccMessageNoDate.index(')')
+                    #substring everything after, to make it a normal string with just one set of (coins) paren
+                    ccMessageNoDate = ccMessageNoDate[firstEndParenIndex+1:]
+                    #standard parse coins
+                    coinsBeginIndex = ccMessageNoDate.index('(')+1
+                    coinsEndingIndex = ccMessageNoDate.index(')')-6 #subtract "coins" str length
+                    coinsStr = ccMessageNoDate[coinsBeginIndex:coinsEndingIndex]
             else:
-                #find index of first ')'
-                firstEndParenIndex = ccMessageNoDate.index(')')
-                #substring everything after, to make it a normal string with just one set of (coins) paren
-                ccMessageNoDate = ccMessageNoDate[firstEndParenIndex+1:]
-                #standard parse coins
-                coinsBeginIndex = ccMessageNoDate.index('(')+1
-                coinsEndingIndex = ccMessageNoDate.index(')')-6 #subtract "coins" str length
-                coinsStr = ccMessageNoDate[coinsBeginIndex:coinsEndingIndex]
+                # No parentheses
+                # Make API call to get real-time price
+                item_to_id = {
+                    # Cox items
+                    "Arcane prayer scroll": "21079",
+                    "Dexterous prayer scroll": "21034",
+                    "Twisted buckler": "21000",
+                    "Dragon hunter crossbow": "21012",
+                    "Dinh's bulwark": "21015",
+                    "Ancestral hat": "21018",
+                    "Ancestral robe top": "21021",
+                    "Ancestral robe bottom": "21024",
+                    "Dragon claws": "13652",
+                    "Elder maul": "21003",
+                    "Kodai insignia": "21043",
+                    "Twisted bow": "20997",
+                    # Toa items
+                    "Osmumten's fang": "26219",
+                    "Lightbearer": "25975",
+                    "Elidinis' ward": "25985",
+                    "Masori mask": "27226",
+                    "Masori body": "27229",
+                    "Masori chaps": "27232",
+                    "Tumeken's shadow (uncharged)": "27277",
+                    # Tob items
+                    "Avernic defender hilt": "22477",
+                    "Ghrazi rapier": "22324",
+                    "Sanguinesti staff (uncharged)": "22481",
+                    "Justiciar faceguard": "22326",
+                    "Justiciar chestguard": "22327",
+                    "Justiciar legguards": "22328",
+                    "Scythe of vitur (uncharged)": "22486",
+                }
+
+                
+                url = "https://prices.runescape.wiki/api/v1/osrs/latest"
+                headers = {
+                    'User-Agent': 'Drops Tracker for discord server',
+                }
+                params = {
+                    "id": 1    # must change
+                }
+                # Find substr and store key-value
+                for key, value in item_to_id.items():
+                    if key in ccMessageNoDate:
+                        params["id"] = value
+                        item_id = value
+                        break
+
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url, params=params, headers=headers) as resp:
+                        data = await resp.json()
+                        data = data['data'][f"{item_id}"]
+                        coinsInt = data['low']
+                    coinsStr = format(coinsInt, ',')
+                
             return coinsStr.replace(',', '')
         except ValueError as e:
             return "0"
@@ -493,6 +540,7 @@ def extractTimeInSeconds(ccMessageNoDate: str) -> str:
     #0:10.8
     return pbTimeSeconds
 
+
 def checkForBingoDrop(fullStringNoDate: str, content_dict: dict):
     """
         Determine the appropriate webhook url, message, and
@@ -513,7 +561,7 @@ def checkForBingoDrop(fullStringNoDate: str, content_dict: dict):
             The webhook url, message, and MessageCategory as a dictionary
     """
     if content_dict:
-        content_dict["isBingo"] = False  # default value
+        content_dict["is_bingo"] = False  # default value
 
         bingo_drops = [
             # 3 fangs
@@ -630,20 +678,20 @@ def checkForBingoDrop(fullStringNoDate: str, content_dict: dict):
         # Determine if drop is bingo-related
         for drop in bingo_drops:
             if drop in fullStringNoDate:
-                content_dict["isBingo"] = True
+                content_dict["is_bingo"] = True
                 break
 
         # Now determine team - j22 or vendirz
         for name in team_j22:
             if name in fullStringNoDate:
                 # send to j22 drop webhook
-                content_dict["bingoTeam"] = "j22"
+                content_dict["bingo_team"] = "j22"
                 return content_dict
 
         for name in team_vendirz:
             if name in fullStringNoDate:
                 # send to vendirz drop webhook
-                content_dict["bingoTeam"] = "vendirz"
+                content_dict["bingo_team"] = "vendirz"
                 return content_dict
 
     return content_dict
