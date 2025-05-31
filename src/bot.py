@@ -261,35 +261,35 @@ async def on_message(message: discord.Message):
             content_dict = checkForBingoDrop(no_emoji_message, content_dict)
             # FIXME: send to appropriate #bingo-drop discord webhook
             if content_dict.get("isBingo"):
-                if content_dict["teamName"] == "blue":
+                if content_dict.get("teamName") == "blue":
                     coded_message = "🔵" + coded_message
                     bingo_webhook_url = webhook_config.BINGO_DROPS_URL
-                elif content_dict["teamName"] == "green":
+                elif content_dict.get("teamName") == "green":
                     coded_message = "🟢" + coded_message
                     bingo_webhook_url = webhook_config.BINGO_DROPS_URL
-                elif content_dict["teamName"] == "red":
+                elif content_dict.get("teamName") == "red":
                     coded_message = "🔴" + coded_message
                     bingo_webhook_url = webhook_config.BINGO_DROPS_URL
 
-            if content_dict.get("teamName"):
-                # Check if duplicate before sending
-                #   query the item, rsn occured within 3 seconds prior
-                try:
-                    # send to bingo_drop database
-                    data = {
-                        "rsn": extractRSN(no_emoji_message, category),
-                        "item": extractDrop(no_emoji_message, category),
-                        "team_name": content_dict["teamName"],
-                    }
-                    await insert_bingo_drop_db(async_session, data)
+                if content_dict.get("teamName"):
+                    # Check if duplicate before sending
+                    #   query the item, rsn occured within 3 seconds prior
+                    try:
+                        # send to bingo_drop database
+                        data = {
+                            "rsn": extractRSN(no_emoji_message, category),
+                            "item": extractDrop(no_emoji_message, category),
+                            "team_name": content_dict["teamName"],
+                        }
+                        await insert_bingo_drop_db(async_session, data)
 
-                    # send to webhook
-                    await sendContentToWebhook(
-                        webhook_url=bingo_webhook_url,
-                        message=coded_message
-                    )
-                except Exception as e:
-                    logger.error(f"Failed to send content to webhook - {e}")
+                        # send to webhook
+                        await sendContentToWebhook(
+                            webhook_url=bingo_webhook_url,
+                            message=coded_message
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to send content to webhook - {e}")
 
 
 ###################################################
