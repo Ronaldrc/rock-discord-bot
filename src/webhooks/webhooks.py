@@ -680,7 +680,7 @@ def checkForBingoDrop(fullStringNoDate: str, content_dict: dict):
             "rambroze",
             "Weave X",
             "Hemlockk",
-            "69kaboom420",
+            "69Kaboom420",
             "GART0U",
             "Casey Ellis",
             "Nokowt",
