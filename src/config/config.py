@@ -15,6 +15,11 @@ class DiscordConfig:
         self.LIVE_CHANNEL_ID = os.environ.get("DISCORD_LIVE_CHANNEL_ID")
         self.STREAMERS_CHANNEL_ID = os.environ.get("STREAMERS_CHANNEL_ID")
         self.STREAMERS_MESSAGE_ID = os.environ.get("STREAMERS_MESSAGE_ID")
+        self.OWNER_ID = os.environ.get("OWNER_ID")
+        self.DISCORD_GUILD_ID_PERSONAL = os.environ.get("DISCORD_GUILD_ID_PERSONAL")
+        self.DISCORD_GUILD_ID_ROCK = os.environ.get("DISCORD_GUILD_ID_ROCK")
+        self.FARMER_USER_ID = os.environ.get("FARMER_USER_ID")
+
 
         # PKs
         self.PK_1_HOUR_CHANNEL_ID = int(os.environ.get("PK_1_HOUR_CHANNEL_ID"))
@@ -114,10 +119,6 @@ class WebhookConfig:
         self.INVITED_URL = os.environ.get("INVITED_URL")
         self.LEFT_URL = os.environ.get("LEFT_URL")
         self.BINGO_DROPS_URL = os.environ.get("BINGO_DROPS_URL")
-
-        # Test variables - FIXME and delete later
-        self.TEST_BINGO_BOT_CHAT_URL = os.environ.get("TEST_BINGO_BOT_CHAT_URL")
-        self.TEST_BINGO_BOT_URL = os.environ.get("TEST_BINGO_BOT_URL")
 
 
 class KickConfig:
