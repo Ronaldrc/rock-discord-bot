@@ -12,6 +12,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.sql.functions import sum
 from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 from config.logger_config import get_logger
 from datetime import datetime, timedelta
 
@@ -22,7 +23,7 @@ logger = get_logger(__name__)
 ###### Player kill table
 ##########################
 async def get_sum_pk_db(
-    async_session: async_sessionmaker,
+    async_session: async_sessionmaker[AsyncSession],
     data: dict
 ):
     """
@@ -46,16 +47,42 @@ async def get_sum_pk_db(
             await session.rollback()
 
 
+async def get_top_pk_db(
+    async_session: async_sessionmaker[AsyncSession],
+) -> list[tuple[str, datetime, int]] | None:
+    """
+    Return the top 100 player kills with the most loot
+    """
+    async with async_session() as session:
+        try:
+            logger.info(f"Getting top 100 player kills from db")
+            stmt = (
+                select(PlayerKill.rsn, PlayerKill.date, PlayerKill.loot_big_int)
+                .group_by(PlayerKill.rsn, PlayerKill.date, PlayerKill.loot_big_int)
+                .order_by(PlayerKill.loot_big_int.desc(), PlayerKill.date.desc())
+                .limit(100)
+            )
+            result = await session.execute(stmt)
+            pk_100 = result.all()
+            if pk_100:
+                return pk_100
+            else:
+                return "N/A"
+        except Exception as e:
+            logger.error(f"Failed to get top 100 player kills from db: {e}")
+            await session.rollback()
+
+
 # Use for Recent Total GP
 async def get_all_pk_sum_values_db(
-    async_session: async_sessionmaker,
+    async_session: async_sessionmaker[AsyncSession],
     time_range_hours: int = None
 ):
     """
 
     Parameter
     ----------
-    async_session: async_sessionmaker
+    async_session: async_sessionmaker[AsyncSession]
         
     
     time_range_hours: int
@@ -83,7 +110,7 @@ async def get_all_pk_sum_values_db(
 
 
 async def insert_player_kill_db(
-    async_session: async_sessionmaker,
+    async_session: async_sessionmaker[AsyncSession],
     data: dict
 ):
     async with async_session() as session:

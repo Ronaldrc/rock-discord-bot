@@ -3,9 +3,11 @@ from db.db_init import (
 )
 from sqlalchemy import (
     update,
-    select
+    select,
+    delete
 )
 from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 from config.logger_config import get_logger
 
 logger = get_logger(__name__)
@@ -14,8 +16,43 @@ logger = get_logger(__name__)
 ##########################
 ###### Streamer table
 ##########################
+async def add_streamer_slash_command_db(
+    async_session: async_sessionmaker[AsyncSession],
+    data: dict
+):
+    async with async_session() as session:
+        try:
+            logger.info(f"Adding new streamer, {data.get('name', "")}, to db")
+            new_streamer = Streamer(
+                name=data.get('name'),
+                platform=data.get('platform').lower(),
+                url=data.get('url')
+            )
+            session.add(new_streamer)
+            await session.commit()
+        except Exception as e:
+            logger.error(f"Failed to add new streamer, {data.get('name', "")}, to db: {e}")
+            await session.rollback()
+
+async def delete_streamer_slash_command_db(
+    async_session: async_sessionmaker[AsyncSession],
+    name: str
+):
+    async with async_session() as session:
+        try:
+            logger.info(f"Attempting to deleting streamer, {name}, from db")
+            stmt = (
+                delete(Streamer)
+                .where(Streamer.name.ilike(name))
+            )
+            await session.execute(stmt)
+            await session.commit()
+        except Exception as e:
+            logger.error(f"Failed to delete streamer, {name}, from db: {e}")
+            await session.rollback()
+
 async def add_streamer_db(
-    async_session: async_sessionmaker,
+    async_session: async_sessionmaker[AsyncSession],
     data: dict
 ):
     async with async_session() as session:
@@ -28,7 +65,8 @@ async def add_streamer_db(
                 stream_id=data.get('stream_id', -1),
                 video_thumbnail=data.get("video_thumbnail", "N/A"),
                 profile_pic=data.get('profile_pic', "N/A"),
-                url=data.get('url', "N/A")
+                url=data.get('url', "N/A"),
+                platform=data.get('platform', "N/A")
             )
             session.add(new_streamer)
             await session.commit()
@@ -37,7 +75,7 @@ async def add_streamer_db(
             await session.rollback()
 
 
-async def update_streamer_db(async_session: async_sessionmaker, data: dict):
+async def update_streamer_db(async_session: async_sessionmaker[AsyncSession], data: dict):
     async with async_session() as session:
         try:
             logger.info(f"Updating {data.get('name', "")} to db")
@@ -55,7 +93,7 @@ async def update_streamer_db(async_session: async_sessionmaker, data: dict):
 
 # Add if new entry, else update
 async def add_or_update_streamer_db(
-    async_session: async_sessionmaker,
+    async_session: async_sessionmaker[AsyncSession],
     data: dict
 ):
     async with async_session() as session:
@@ -76,7 +114,7 @@ async def add_or_update_streamer_db(
 
 
 async def get_streamer_db(
-    async_session: async_sessionmaker,
+    async_session: async_sessionmaker[AsyncSession],
     data: dict
 ):
     async with async_session() as session:
@@ -105,8 +143,47 @@ async def get_streamer_db(
             await session.rollback()
 
 
+async def get_all_streamer_name_db(
+    async_session: async_sessionmaker[AsyncSession]
+) -> list[str]:
+    names: list[str] = []
+    async with async_session() as session:
+        try:
+            stmt = select(Streamer.name)
+            result = await session.execute(stmt)
+            streamer_names = result.all()
+            if streamer_names:
+                return [row[0] for row in streamer_names]
+            else:
+                return None
+        except Exception as e:
+            logger.error(f"Failed get_all_streamer_name_db: {e}")
+        return names
+
+
+async def get_all_streamer_name_with_platform_db(
+    async_session: async_sessionmaker[AsyncSession],
+    platform: str
+) -> list[str]:
+    """Retrieve all streamer names given a streaming platform"""
+    names: list[str] = []
+    async with async_session() as session:
+        try:
+            logger.info(f"Getting all streamer names with platform from db")
+            stmt = select(Streamer.name).where(Streamer.platform == platform)
+            result = await session.execute(stmt)
+            streamer_names = result.all()
+            if streamer_names:
+                return [row[0] for row in streamer_names]
+            else:
+                return None
+        except Exception as e:
+            logger.error(f"Failed get_all_streamer_name_with_platform_db: {e}")
+    return names
+
+
 async def get_all_streamer_status_db(
-    async_session: async_sessionmaker
+    async_session: async_sessionmaker[AsyncSession]
 ) -> tuple[list[dict], list[dict]]:
     live: list[dict] = []
     not_live: list[dict] = []
@@ -139,10 +216,9 @@ async def get_all_streamer_status_db(
             return (live, not_live)
         except Exception as e:
             logger.error(f"Failed get_all_streamer_status_db: {e}")
-            await session.rollback()
 
 
-async def get_is_live_status_db(async_session: async_sessionmaker, data: dict):
+async def get_is_live_status_db(async_session: async_sessionmaker[AsyncSession], data: dict):
     async with async_session() as session:
         try:
             stmt = (
@@ -157,11 +233,10 @@ async def get_is_live_status_db(async_session: async_sessionmaker, data: dict):
                 return False
         except Exception as e:
             logger.error(f"Failed get_is_live_status_db: {e}")
-            await session.rollback()
 
 
 async def get_twitch_profile_pic(
-    async_session: async_sessionmaker,
+    async_session: async_sessionmaker[AsyncSession],
     data: dict
 ):
     async with async_session() as session:
@@ -178,4 +253,3 @@ async def get_twitch_profile_pic(
                 return "N/A"
         except Exception as e:
             logger.error(f"Failed get twitch profile picture: {e}")
-            await session.rollback()

@@ -7,6 +7,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.sql.functions import sum
 from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 from config.logger_config import get_logger
 from datetime import datetime, timedelta
 
@@ -18,7 +19,7 @@ logger = get_logger(__name__)
 ##########################
 
 async def get_all_personal_best_db(
-    async_session: async_sessionmaker,
+    async_session: async_sessionmaker[AsyncSession],
     time_range_hours: int = None
 ):
     """
@@ -43,7 +44,7 @@ async def get_all_personal_best_db(
 
 
 async def insert_personal_best_db(
-    async_session: async_sessionmaker,
+    async_session: async_sessionmaker[AsyncSession],
     data: dict
 ):
     async with async_session() as session:

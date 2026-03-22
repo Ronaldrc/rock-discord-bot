@@ -7,6 +7,7 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 from config.logger_config import get_logger
 from datetime import datetime, timedelta
 from db.pk import get_all_pk_sum_values_db
@@ -16,21 +17,21 @@ logger = get_logger(__name__)
 
 
 async def get_all_profit_pk_sum_values_db(
-    async_session: async_sessionmaker,
+    async_session: async_sessionmaker[AsyncSession],
     time_range_hours: int = None
 ) -> str | None:
     """
 
     Parameter
     ----------
-    async_session: async_sessionmaker
+    async_session: async_sessionmaker[AsyncSession]
         
     
     time_range_hours: int
         In hours, retrieve data from now to time_range_hours hours ago.
         If None, sum all drops for all rsn
 
-    Return a formatted string or "No content!".
+    Return a formatted string or "No data to display!".
     Names and values in descending order,
     sum of death value subtracted from the 
     sum of player kill estimated value for all rsn, in descending order
@@ -52,8 +53,6 @@ async def get_all_profit_pk_sum_values_db(
     all_names = set(pk_dict.keys()) | set(death_dict.keys())
 
     if all_names:
-        all_names = set(pk_dict.keys()) | set(death_dict.keys())
-
         # Compute profit-pk values
         profit_pks = {name: pk_dict.get(name, 0) - death_dict.get(name, 0) for name in all_names}
         # print(f"pk_dict here:\n {pk_dict}")
@@ -61,7 +60,7 @@ async def get_all_profit_pk_sum_values_db(
         # print(f"profit_pks here:\n {profit_pks}")
 
         # Sort dictionary by values in descending order
-        sorted_profit_pks = sorted(profit_pks.items(), key=lambda x: x[1], reverse=True)
+        sorted_profit_pks = sorted(profit_pks.items(), key=lambda item: item[1], reverse=True)
         # print(f"sorted_profit_pks here:\n {sorted_profit_pks}")
 
         formatted_string = "".join(
@@ -70,4 +69,4 @@ async def get_all_profit_pk_sum_values_db(
 
         return formatted_string
 
-    return "No content!\n"
+    return "No data to display!\n"

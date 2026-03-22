@@ -23,10 +23,7 @@ async def send_live_notification(client: discord.Client, notification: discord.E
 def create_embedding(data: json, streaming_platform: str):
     streamer_name = data['name']
     logger.info(f"Creating embedding for {streamer_name}")
-    if streaming_platform == "Kick":
-        url = f"https://kick.com/{streamer_name}"
-    else:
-        url = f"https://twitch.tv/{streamer_name}"
+    url = data['url']
     
     embed = discord.Embed(
             title=f"{streamer_name} is live on {streaming_platform}!",
@@ -35,7 +32,11 @@ def create_embedding(data: json, streaming_platform: str):
             color=(5766193 if streaming_platform == "Kick" else 11104511)   # bright green for kick, purple for twitch
         )
     embed.add_field(name=f"{data['title']}", value="")
-    embed.set_image(url=f"{data['video_thumbnail']}") # url
+    
+    # FIXME 31Aug2025 - webscraped kick data does not have a thumbnail  
+    if data.get('video_thumbnail') != "N/A":
+        embed.set_image(url=f"{data['video_thumbnail']}") # url
+    
     embed.set_thumbnail(url=f"{data['profile_pic']}" if data['profile_pic'] else "https://kick.com/img/default-profile-pictures/default1.jpeg") # url, else use default image
     return embed
 
@@ -70,7 +71,7 @@ def format_streamer_status_list(live: list[dict], not_live: list[dict]) -> str:
     formatted_string = "🔴 LIVE NOW 🔴 \n"
     formatted_string += "".join([f"- [{data["name"]}]({data["url"]})" +
         (
-            f" (went live {datetime_to_discord_time_stamp(data["start_time"])})\n"
+            f" (live {datetime_to_discord_time_stamp(data["start_time"])})\n"
         ) for data in live
     ])
 
@@ -81,7 +82,7 @@ def format_streamer_status_list(live: list[dict], not_live: list[dict]) -> str:
     formatted_string += "".join([
         f"{index + 1}. [{data["name"]}]({data["url"]})" +
         (
-            f" (last seen {datetime_to_discord_time_stamp(data["start_time"])})\n"
+            f" ({datetime_to_discord_time_stamp(data["start_time"])})\n"
             if datetime.now(timezone.utc) - data["start_time"] < timedelta(days=700) else "\n"
         ) for index, data in enumerate(not_live)
     ])  # timedelta to avoid printing times without valid start_times
@@ -96,8 +97,9 @@ def limit_message_length(formatted_string: str) -> str:
     
     Why? Discord limits messages to <2000 characters
     """
-    if len(formatted_string) > 1900:
-        truncated_string = formatted_string[:1900]
+    max_length = 1900
+    if len(formatted_string) > max_length:
+        truncated_string = formatted_string[:max_length]
     
         # Find the last newline before the 1900th character
         last_newline_index = truncated_string.rfind("\n")
@@ -105,8 +107,42 @@ def limit_message_length(formatted_string: str) -> str:
         if last_newline_index != -1:
             truncated_string = truncated_string[:last_newline_index + 1]  # Keep everything up to and including the last newline
         else:
-            truncated_string = truncated_string[:1900]  # No newline found, hard limit
+            truncated_string = truncated_string[:max_length]  # No newline found, hard limit
 
         formatted_string = truncated_string  # Update formatted_string
     
     return formatted_string
+
+
+def split_message_into_parts(formatted_string: str) -> list[str]:
+    """
+    Split a long message into parts of length is greater than 1899 characters and ensure it ends with a newline
+    
+    Why? Discord limits messages to <2000 characters
+
+    So, a long message is split and stored as shortened messages in a list.
+    """
+    max_length = 1900
+    parts = []
+
+    while len(formatted_string) > max_length:
+        # Cut off at max_length and try to split at last newline
+        split_index = formatted_string[:max_length].rfind("\n")
+
+        if split_index == -1:
+            # No newline found, just hard split
+            split_index = max_length
+
+        part = formatted_string[:split_index].rstrip() + "\n"
+        parts.append(part)
+
+        # Remove used part
+        formatted_string = formatted_string[split_index:]
+
+    # Add the remainder if any
+    if formatted_string.strip():
+        if not formatted_string.endswith("\n"):
+            formatted_string += "\n"
+        parts.append(formatted_string)
+
+    return parts

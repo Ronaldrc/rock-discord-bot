@@ -63,6 +63,16 @@ async def update_user_access_token():
 
 
 def parse_json(data):
+    # Get the username first
+    username = data.get("user", {}).get("username")
+
+    # Handle underscore replacement for URL - 20Mar2026 modified to only handle stoned-land
+    if username == 'Stoned_Land' and '_' in username:
+        name_with_hyphen = username.replace("_", "-")
+        url = f'https://kick.com/{name_with_hyphen}/'
+    else:
+        url = f'https://kick.com/{username}/' if username else "N/A"
+    
     parsed_json = {
         "name": data.get("user", {}).get("username"),
         "title": data.get("livestream", {}).get("session_title") if data.get("livestream") else "N/A",
@@ -70,7 +80,8 @@ def parse_json(data):
         "stream_id": data.get("livestream", {}).get("id") if data.get("livestream") else -1,
         "video_thumbnail": data.get("livestream", {}).get("thumbnail", {}).get("url") if data.get("livestream") and data.get("livestream").get("thumbnail") else "N/A",
         "profile_pic": data.get("user", {}).get("profile_pic") if data.get("user") else "N/A",
-        "url" : f"https://kick.com/{data.get("user", {}).get("username")}"
+        "url" : url,
+        "platform" : "kick"
     }
     return parsed_json
 
@@ -127,22 +138,26 @@ async def get_all_kick_stream_status(client, streamers):
         page = await browser.new_page()
         for name in streamers:
             url = f'https://kick.com/api/v2/channels/{name}/'
+            # print(url)
             r = await page.goto(url, wait_until="networkidle")    # wait until webpage is fully loaded
-            data = await r.json()
-            parsed_data = parse_json(data)    # only save important fields
+            # print(r.status)
+            if r.status == 200:
+                data = await r.json()
+                # print(data)
+                parsed_data = parse_json(data)    # only save important fields
+                # print(parsed_data)
+                was_is_live = await get_is_live_status_db(async_session, parsed_data)
+                current_is_live = parsed_data['is_live']
 
-            was_is_live = await get_is_live_status_db(async_session, parsed_data)
-            current_is_live = parsed_data['is_live']
+                # send embedding to channel
+                if was_is_live == False and current_is_live == True:
+                    embed = create_embedding(parsed_data, "Kick")
+                    parsed_data['start_time'] = datetime.now(timezone.utc)
+                    await send_live_notification(client, embed)
+                elif was_is_live == True and current_is_live == False:
+                    parsed_data['start_time'] = datetime.now(timezone.utc)
 
-            # send embedding to channel
-            if was_is_live == False and current_is_live == True:
-                embed = create_embedding(parsed_data, "Kick")
-                parsed_data['start_time'] = datetime.now(timezone.utc)
-                await send_live_notification(client, embed)
-            elif was_is_live == True and current_is_live == False:
-                parsed_data['start_time'] = datetime.now(timezone.utc)
-
-            await add_or_update_streamer_db(async_session, parsed_data)
+                await add_or_update_streamer_db(async_session, parsed_data)
     except Exception as e:
         logger.error(f"get_all_kick_stream_status failed: {e}")
     finally:

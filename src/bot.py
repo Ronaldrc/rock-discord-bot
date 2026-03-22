@@ -1,6 +1,11 @@
+import os
+from dotenv import load_dotenv
 import asyncio
 import discord
+from typing import Literal
+from discord.utils import get
 from datetime import datetime
+from datetime import timezone
 from discord.ext import commands, tasks
 from kick.kick import get_all_kick_stream_status, read_streamers
 from twitch.twitch import (
@@ -12,7 +17,10 @@ from db.db_init import (
     create_tables
 )
 from db.streamer import (
-    get_all_streamer_status_db
+    get_all_streamer_status_db,
+    get_all_streamer_name_db,
+    add_streamer_slash_command_db,
+    get_all_streamer_name_with_platform_db
 )
 from db.drop import (
     insert_drop_db,
@@ -30,10 +38,8 @@ from db.pb import (
 from db.pk import (
     get_all_pk_sum_values_db,
     get_sum_pk_db,
+    get_top_pk_db,
     insert_player_kill_db,
-)
-from db.streamer import (
-    get_all_streamer_status_db,
 )
 from db.profit_pk import (
     get_all_profit_pk_sum_values_db,
@@ -42,9 +48,13 @@ from db.bingo import (
     insert_bingo_drop_db
 )
 from config.logger_config import get_logger
-from utils.utils import format_streamer_status_list, limit_message_length
+from utils.utils import (
+    format_streamer_status_list, 
+    limit_message_length,
+    split_message_into_parts
+)
 from config.config import DiscordConfig
-from webhooks.webhooks import (
+from message.message import (
     WebhookConfig,
     MessageCategory,
     getMessageCategory,
@@ -53,11 +63,17 @@ from webhooks.webhooks import (
     extractDrop,
     extractLootValue,
     extractTimeInSeconds,
-    checkForBingoDrop,
     extractBoss
+)
+from message.bingo import (
+    checkForBingoDrop
 )
 from utils.utils import (
     datetime_to_discord_time_stamp
+)
+from cogs.cogs import (
+    Greetings,
+    Streamers
 )
 
 from rich import print
@@ -66,16 +82,36 @@ logger = get_logger(__name__)
 
 ### Get discord webhooks
 webhook_config = WebhookConfig(".env")
+discord_config = DiscordConfig(".env")
+
+PERSONAL_GUILD_ID = int(discord_config.DISCORD_GUILD_ID_PERSONAL) # personal server
+ROCK_GUILD_ID = int(discord_config.DISCORD_GUILD_ID_ROCK) # personal server
+LIST_GUILD_IDS = [discord.Object(id=PERSONAL_GUILD_ID), discord.Object(id=ROCK_GUILD_ID)]
+
+
+class RockBot(commands.Bot):
+    def __init__(self, command_prefix, intents, owner_id):
+        super().__init__(command_prefix=command_prefix, intents=intents, owner_id=owner_id)
+
+    async def start(self, token: str) -> None:
+        await self.login(token)
+        await self.connect()
+
+    async def setup_hook(self) -> None:
+        await self._pre_connect()
+
+    async def _pre_connect(self) -> None:
+        """Only called once and before connecting to Discord gateway"""
+        await self.add_cog(Greetings(self))
+        await self.add_cog(Streamers(self))
+
 
 intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
 intents.guilds = True
 
-client = commands.Bot(command_prefix='!', intents=intents)
-
-# Get all api keys
-discord_config = DiscordConfig(".env")
+bot = RockBot(command_prefix='!', intents=intents, owner_id=int(discord_config.OWNER_ID))
 
 DISCORD_APPLICATION_ID = discord_config.DISCORD_APPLICATION_ID
 DISCORD_PUBLIC_KEY = discord_config.DISCORD_PUBLIC_KEY
@@ -85,31 +121,18 @@ STREAMERS_CHANNEL_ID = int(discord_config.STREAMERS_CHANNEL_ID)
 STREAMERS_MESSAGE_ID = int(discord_config.STREAMERS_MESSAGE_ID)
 GAME_CHAT_CHANNEL_ID = int(discord_config.GAME_CHAT_CHANNEL_ID)
 
-@client.event
+
+@bot.event
 async def on_ready():
-    await client.wait_until_ready()
-    logger.info(f"Bot is ready and logged in as {client.user}")
+    await bot.wait_until_ready()
 
     # channel = client.get_channel(discord_config.PROFIT_PK_1_HOUR_CHANNEL_ID)
     # await channel.send("hi")
-
-    # channel = client.get_channel(discord_config.PROFIT_PK_3_HOUR_CHANNEL_ID)
-    # await channel.send("hi")
-
-    # channel = client.get_channel(discord_config.PROFIT_PK_6_HOUR_CHANNEL_ID)
-    # await channel.send("hi")
-
-    # channel = client.get_channel(discord_config.PROFIT_PK_12_HOUR_CHANNEL_ID)
-    # await channel.send("hi")
-
-    # channel = client.get_channel(discord_config.PROFIT_PK_1_DAY_CHANNEL_ID)
-    # await channel.send("hi")
-
-    # channel = client.get_channel(discord_config.PROFIT_PK_7_DAY_CHANNEL_ID)
-    # await channel.send("hi")
-
-    # channel = client.get_channel(discord_config.PROFIT_PK_30_DAY_CHANNEL_ID)
-    # await channel.send("hi")
+    # await pk_total_gp()
+    # await drop_total_gp()
+    # names = await get_all_streamer_name_db(async_session=async_session)
+    # print(names)
+    # await pk_top()
 
     refresh_token_periodically.start()
     pk_1_hour.start()
@@ -149,7 +172,7 @@ async def on_ready():
     check_twitch_streams_periodically.start()
 
 
-@client.event
+@bot.event
 async def on_message(message: discord.Message):
     """
         Called every time a message is sent in the server.
@@ -166,6 +189,7 @@ async def on_message(message: discord.Message):
             - recent total gp
                 - pk-1h
                 - pk-3h
+                - drop-24h
                 - etc.
         
         Parameters
@@ -207,7 +231,6 @@ async def on_message(message: discord.Message):
 
         # Send relevant information to database
         if category == MessageCategory.PK:
-            # send to database
             no_emoji_message, loot_string = await extractLootValue(no_emoji_message, category)
             data = {
                 "rsn": extractRSN(no_emoji_message, category),
@@ -215,8 +238,9 @@ async def on_message(message: discord.Message):
                 "loot_big_int": int(loot_string)
             }
             await insert_player_kill_db(async_session, data)
+            # FIXME: call pk_total_gp() and pk_top()
+
         elif category == MessageCategory.DEATH:
-            # send to database
             no_emoji_message, loot_string = await extractLootValue(no_emoji_message, category)
             data = {
                 "rsn": extractRSN(no_emoji_message, category),
@@ -225,7 +249,6 @@ async def on_message(message: discord.Message):
             }
             await insert_death_db(async_session, data)
         elif category == MessageCategory.PERSONAL_BEST:
-            # send to database
             data = {
                 "rsn": extractRSN(no_emoji_message, category),
                 "boss": extractBoss(no_emoji_message, category),
@@ -233,8 +256,10 @@ async def on_message(message: discord.Message):
             }
             await insert_personal_best_db(async_session, data)
         elif category == MessageCategory.DROP:
-            # send to database
+            logger.info(f"no_emoji_message before: {no_emoji_message}")
             no_emoji_message, loot_string = await extractLootValue(no_emoji_message, category)
+            logger.info(f"no_emoji_message after: {no_emoji_message}")
+            logger.info(f"loot_string after: {loot_string}")
             data = {
                 "rsn": extractRSN(no_emoji_message, category),
                 "item": extractDrop(no_emoji_message, category),
@@ -242,9 +267,10 @@ async def on_message(message: discord.Message):
                 "loot_big_int": int(loot_string)
             }
             await insert_drop_db(async_session, data)
+            # FIXME: Call drop_total_gp() and drop_top()
 
-            # Add prefix, value then send drop to webhook
-            coded_message = f":moneybag:{no_emoji_message}"
+            # Add prefix and value then send drop to webhook
+            coded_message = f":moneybag: {no_emoji_message}"
             try:
                 await sendContentToWebhook(
                     webhook_url=webhook_url,
@@ -257,39 +283,35 @@ async def on_message(message: discord.Message):
         #   Check for bingo drop for drops
         #   Send bingo drops to appropriate channels
         #       change .env for appropriate bingo channel
-        if content_dict:
-            content_dict = checkForBingoDrop(no_emoji_message, content_dict)
-            # FIXME: send to appropriate #bingo-drop discord webhook
-            if content_dict.get("isBingo"):
-                if content_dict.get("teamName") == "blue":
-                    coded_message = "🔵" + coded_message
-                    bingo_webhook_url = webhook_config.BINGO_DROPS_URL
-                elif content_dict.get("teamName") == "green":
-                    coded_message = "🟢" + coded_message
-                    bingo_webhook_url = webhook_config.BINGO_DROPS_URL
-                elif content_dict.get("teamName") == "red":
-                    coded_message = "🔴" + coded_message
-                    bingo_webhook_url = webhook_config.BINGO_DROPS_URL
+        # if content_dict:
+        #     content_dict = checkForBingoDrop(no_emoji_message, content_dict)
+        #     if content_dict.get("isBingo"):
+        #         if content_dict.get("teamName") == "blue":
+        #             coded_message = "🔵" + coded_message
+        #             bingo_webhook_url = webhook_config.BINGO_DROPS_URL
+        #         elif content_dict.get("teamName") == "red":
+        #             coded_message = "🔴" + coded_message
+        #             bingo_webhook_url = webhook_config.BINGO_DROPS_URL
 
-                if content_dict.get("teamName"):
-                    # Check if duplicate before sending
-                    #   query the item, rsn occured within 3 seconds prior
-                    try:
-                        # send to bingo_drop database
-                        data = {
-                            "rsn": extractRSN(no_emoji_message, category),
-                            "item": extractDrop(no_emoji_message, category),
-                            "team_name": content_dict["teamName"],
-                        }
-                        await insert_bingo_drop_db(async_session, data)
+        #         if content_dict.get("teamName"):
+        #             # Check if duplicate before sending
+        #             #   query the item, rsn occured within 3 seconds prior
+        #             try:
+        #                 # send to bingo_drop database
+        #                 data = {
+        #                     "rsn": extractRSN(no_emoji_message, category),
+        #                     "item": extractDrop(no_emoji_message, category),
+        #                     "team_name": content_dict["teamName"],
+        #                 }
+        #                 await insert_bingo_drop_db(async_session, data)
 
-                        # send to webhook
-                        await sendContentToWebhook(
-                            webhook_url=bingo_webhook_url,
-                            message=coded_message
-                        )
-                    except Exception as e:
-                        logger.error(f"Failed to send content to webhook - {e}")
+        #                 # send to webhook
+        #                 await sendContentToWebhook(
+        #                     webhook_url=bingo_webhook_url,
+        #                     message=coded_message
+        #                 )
+        #             except Exception as e:
+        #                 logger.error(f"Failed to send content to webhook - {e}")
 
 
 ###################################################
@@ -301,29 +323,39 @@ async def update_pk_message(
     channel_id: int, 
     message_id: int
 ):
-    max_char_per_message = 1900
+    channel = bot.get_channel(channel_id)
+    
+    for attempt in range(3):
+        try:
+            message = await channel.fetch_message(message_id)
 
-    channel = client.get_channel(channel_id)
-    message = await channel.fetch_message(message_id)
+            result = await get_all_pk_sum_values_db(
+                async_session=async_session,
+                time_range_hours=num_hours
+            )
 
-    result = await get_all_pk_sum_values_db(
-        async_session=async_session,
-        time_range_hours=num_hours
-    )
+            if result is not None:
+                formatted_string = "".join(
+                    f"{i+1}) {name:<15}{int(value):,}\n" for i, (name, value) in enumerate(result)
+                )
+            else:
+                formatted_string = "No data to display!\n"
+                
+            formatted_string = limit_message_length(formatted_string)
+            formatted_string += f"{datetime_to_discord_time_stamp(datetime.now())}"
 
-    if result is not None:
-        formatted_string = "".join(
-            f"{i+1}) {name:<15}{int(value):,}\n" for i, (name, value) in enumerate(result)
-        )
-    else:
-        formatted_string = "No content!\n"
-        
-    # Limit message length to 1900 characters while ensuring it ends with a newline
-    formatted_string = limit_message_length(formatted_string)
-    formatted_string += f"{datetime_to_discord_time_stamp(datetime.now())}"
-
-    # Edit the message with the safe length
-    await message.edit(content=formatted_string)
+            await message.edit(content=formatted_string)
+            return  # success, exit
+            
+        except discord.HTTPException as e:
+            logger.warning(f"Discord HTTP error (attempt {attempt + 1}/3): {e.status} - {e.text}")
+            if attempt < 2:
+                await asyncio.sleep(10)
+        except Exception as e:
+            logger.error(f"Unexpected error updating pk message: {e}")
+            return
+    
+    logger.error("Failed to update pk message after 3 attempts")
 
 
 @tasks.loop(seconds=300)  # every 5 minutes
@@ -398,32 +430,39 @@ async def update_death_message(
     channel_id: int, 
     message_id: int
 ):
-    max_char_per_message = 1900
+    channel = bot.get_channel(channel_id)
+    
+    for attempt in range(3):
+        try:
+            message = await channel.fetch_message(message_id)
 
-    channel = client.get_channel(channel_id)
-    message = await channel.fetch_message(message_id)
+            result = await get_all_death_sum_values_db(
+                async_session=async_session,
+                time_range_hours=num_hours
+            )
 
-    result = await get_all_death_sum_values_db(
-        async_session=async_session,
-        time_range_hours=num_hours
-    )
+            if result is not None:
+                formatted_string = "".join(
+                    f"{i+1}) {name:<15}{int(value):,}\n" for i, (name, value) in enumerate(result)
+                )
+            else:
+                formatted_string = "No data to display!\n"
+                
+            formatted_string = limit_message_length(formatted_string)
+            formatted_string += f"{datetime_to_discord_time_stamp(datetime.now())}"
 
-    if result is not None:
-        formatted_string = "".join(
-            f"{i+1}) {name:<15}{int(value):,}\n" for i, (name, value) in enumerate(result)
-        )
-    else:
-        formatted_string = "No content!\n"
-        
-    # Limit message length to 1900 characters while ensuring it ends with a newline
-    formatted_string = limit_message_length(formatted_string)
-    formatted_string += f"{datetime_to_discord_time_stamp(datetime.now())}"
-
-    # Edit the message with the safe length
-    try:
-        await message.edit(content=formatted_string)
-    except Exception as e:
-        logger.error(f"Failed to edit message - {e}")
+            await message.edit(content=formatted_string)
+            return  # success, exit
+            
+        except discord.HTTPException as e:
+            logger.warning(f"Discord HTTP error (attempt {attempt + 1}/3): {e.status} - {e.text}")
+            if attempt < 2:
+                await asyncio.sleep(10)
+        except Exception as e:
+            logger.error(f"Unexpected error updating death message: {e}")
+            return
+    
+    logger.error("Failed to update death message after 3 attempts")
     
 
 @tasks.loop(seconds=300)  # every 5 minutes
@@ -492,37 +531,45 @@ async def death_30_day():
 ###################################################
 #################### Send scheduled drop to discord channel
 ###################################################
+
 async def update_drop_message(
     num_hours: int,
     channel_id: int,
     message_id: int
 ):
-    max_char_per_message = 1900
+    channel = bot.get_channel(channel_id)
+    
+    for attempt in range(3):
+        try:
+            message = await channel.fetch_message(message_id)
 
-    channel = client.get_channel(channel_id)
-    message = await channel.fetch_message(message_id)
+            result = await get_all_drop_sum_values_db(
+                async_session=async_session,
+                time_range_hours=num_hours
+            )
 
-    result = await get_all_drop_sum_values_db(
-        async_session=async_session,
-        time_range_hours=num_hours
-    )
+            if result is not None:
+                formatted_string = "".join(
+                    f"{i+1}) {name:<15}{int(value):,}\n" for i, (name, value) in enumerate(result)
+                )
+            else:
+                formatted_string = "No data to display!\n"
+                
+            formatted_string = limit_message_length(formatted_string)
+            formatted_string += f"{datetime_to_discord_time_stamp(datetime.now())}"
 
-    if result is not None:
-        formatted_string = "".join(
-            f"{i+1}) {name:<15}{int(value):,}\n" for i, (name, value) in enumerate(result)
-        )
-    else:
-        formatted_string = "No content!\n"
-        
-    # Limit message length to 1900 characters while ensuring it ends with a newline
-    formatted_string = limit_message_length(formatted_string)
-    formatted_string += f"{datetime_to_discord_time_stamp(datetime.now())}"
-
-    # Edit the message with the safe length
-    try:
-        await message.edit(content=formatted_string)
-    except Exception as e:
-        logger.error(f"Failed to edit message - {e}")
+            await message.edit(content=formatted_string)
+            return  # success, exit
+            
+        except discord.HTTPException as e:
+            logger.warning(f"Discord HTTP error (attempt {attempt + 1}/3): {e.status} - {e.text}")
+            if attempt < 2:
+                await asyncio.sleep(10)
+        except Exception as e:
+            logger.error(f"Unexpected error updating drop message: {e}")
+            return
+    
+    logger.error("Failed to update drop message after 3 attempts")
     
 
 @tasks.loop(seconds=300)  # every 5 minutes
@@ -597,25 +644,32 @@ async def update_profit_pk_message(
     channel_id: int,
     message_id: int
 ):
-    max_char_per_message = 1900
-
-    channel = client.get_channel(channel_id)
-    message = await channel.fetch_message(message_id)
-
-    formatted_string = await get_all_profit_pk_sum_values_db(
-        async_session=async_session,
-        time_range_hours=num_hours
-    )
-        
-    # Limit message length to 1900 characters while ensuring it ends with a newline
-    formatted_string = limit_message_length(formatted_string)
-    formatted_string += f"{datetime_to_discord_time_stamp(datetime.now())}"
-
-    # Edit the message with the safe length
-    try:
-        await message.edit(content=formatted_string)
-    except Exception as e:
-        logger.error(f"Failed to edit message - {e}")
+    channel = bot.get_channel(channel_id)
+    
+    for attempt in range(3):
+        try:
+            message = await channel.fetch_message(message_id)
+            
+            formatted_string = await get_all_profit_pk_sum_values_db(
+                async_session=async_session,
+                time_range_hours=num_hours
+            )
+            
+            formatted_string = limit_message_length(formatted_string)
+            formatted_string += f"{datetime_to_discord_time_stamp(datetime.now())}"
+            
+            await message.edit(content=formatted_string)
+            return  # success, exit
+            
+        except discord.HTTPException as e:
+            logger.warning(f"Discord HTTP error (attempt {attempt + 1}/3): {e.status} - {e.text}")
+            if attempt < 2:
+                await asyncio.sleep(10)
+        except Exception as e:
+            logger.error(f"Unexpected error updating profit pk message: {e}")
+            return  # don't retry on unknown errors
+    
+    logger.error("Failed to update profit pk message after 3 attempts")
 
 
 @tasks.loop(seconds=300)  # every 5 minutes
@@ -681,6 +735,143 @@ async def profit_pk_30_day():
     )
 
 
+
+###################################################
+#################### Send pks total gp to discord channel
+###################################################
+
+async def pk_total_gp():
+    """"
+        Send the two lists once a new pk occurs.
+
+        Two lists include all-time and monthly summary
+    """
+    logger.info("Preparing to send messages for pk_total_gp...")
+    result = await get_all_pk_sum_values_db(
+        async_session=async_session
+    )
+
+    formatted_string = "⭐☠️ Pk Totals - All Time ☠️⭐ (starting Jan 30 2025)\n"
+
+    if result is not None:
+        formatted_string += "".join(
+            f"{i+1}) {name:<15}{int(value):,}\n" for i, (name, value) in enumerate(result)
+        )
+    else:
+        formatted_string = "No data to display!\n"
+        
+    # Limit message length to 1900 characters while ensuring it ends with a newline
+    formatted_string_as_list = split_message_into_parts(formatted_string)
+
+
+    # Send messages in the correct order via webhook
+    try:
+        for message in formatted_string_as_list:
+            await sendContentToWebhook(
+                webhook_url=webhook_config.PKS_TOTAL_GP_URL,
+                message=message
+            )
+    except Exception as e:
+        logger.error("Failed to send all messages to pk_total_gp")
+
+    logger.info("Sent all messages to pk_total_gp")
+
+
+###################################################
+#################### Send drops total gp to discord channel
+###################################################
+
+async def drop_total_gp():
+    """"
+        Send the two lists once a new drop occurs.
+
+        Two lists include all-time and monthly summary
+    """
+    logger.info("Preparing to send messages for drop_total_gp...")
+
+    result = await get_all_drop_sum_values_db(
+        async_session=async_session
+    )
+
+    formatted_string = "⭐💰 Drop Totals - All Time 💰⭐ (starting Jan 30 2025)\n"
+
+    if result is not None:
+        formatted_string += "".join(
+            f"{i+1}) {name:<15}{int(value):,}\n" for i, (name, value) in enumerate(result)
+        )
+    else:
+        formatted_string = "No data to display!\n"
+        
+    # Limit message length to 1900 characters while ensuring it ends with a newline
+    formatted_string_as_list = split_message_into_parts(formatted_string)
+
+
+    # Send messages in the correct order via webhook
+    try:
+        for message in formatted_string_as_list:
+            await sendContentToWebhook(
+                webhook_url=webhook_config.DROPS_TOTAL_GP_URL,
+                message=message
+            )
+    except Exception as e:
+        logger.error("Failed to send all messages to drop_total_gp")
+
+    logger.info("Sent all messages to drop_total_gp")
+
+###################################################
+#################### Send pks top to discord channel
+###################################################
+
+async def pk_top():
+    """"
+        Send the two lists once a new pk occurs.
+
+        Two lists include all-time and monthly summary
+    """
+    logger.info("Preparing to send messages for pk_top...")
+
+    result = await get_top_pk_db(
+        async_session=async_session
+    )
+
+    formatted_string = "⭐☠️ Top Pks- All Time ☠️⭐ (starting Jan 30 2025)\n"
+
+    if result is not None:
+        formatted_string += "".join(
+            f"{i+1}) {name:<15} {int(value):,} gp [{date.year}-{date.month}-{date.day}]\n" for i, (name, date, value) in enumerate(result)
+        )
+    else:
+        formatted_string = "No data to display!\n"
+        
+    # Limit message length to 1900 characters while ensuring it ends with a newline
+    formatted_string_as_list = split_message_into_parts(formatted_string)
+
+    # Send messages in the correct order via webhook
+    try:
+        for message in formatted_string_as_list:
+            await sendContentToWebhook(
+                webhook_url=webhook_config.PKS_TOP_URL,
+                message=message
+            )
+    except Exception as e:
+        logger.error("Failed to send all messages to pk_top")
+
+    logger.info("Sent all messages to pk_top")
+
+###################################################
+#################### Send drops top to discord channel
+###################################################
+
+async def drop_top():
+    """"
+        Send the two lists once a new drop occurs.
+
+        Two lists include all-time and monthly summary
+    """
+    logger.info("ERROR - fix the function definition drop_top")
+    return None
+
+
 ###################################################
 ####################
 ###################################################
@@ -695,34 +886,94 @@ async def refresh_token_periodically():
 
 @tasks.loop(seconds=60)  # every minute
 async def check_kick_streams_periodically():
-    kick_streamers = read_streamers("input/kick_streamers.txt")
+    kick_streamers = await get_all_streamer_name_with_platform_db(async_session, "kick")
     try:
-        await get_all_kick_stream_status(client, kick_streamers)
+        await get_all_kick_stream_status(bot, kick_streamers)
     except Exception as e:
         logger.error(f"Error with Kick streams periodic check: {e}")
 
 
 @tasks.loop(seconds=60)  # every minute
 async def check_twitch_streams_periodically():
-    twitch_streamers = read_streamers("input/twitch_streamers.txt")
+    twitch_streamers = await get_all_streamer_name_with_platform_db(async_session, "twitch")
     try:
-        await get_all_twitch_stream_status(client, twitch_streamers)
+        await get_all_twitch_stream_status(bot, twitch_streamers)
     except Exception as e:
         logger.error(f"Error with Twitch streams periodic check: {e}")
 
+# @tasks.loop(seconds=60)  # every minute
+# async def edit_streamer_status_msg():
+#     try:
+#         logger.info("Editing streamer live, not live msg")
+#         channel = bot.get_channel(STREAMERS_CHANNEL_ID)
+#         message_to_edit = await channel.fetch_message(STREAMERS_MESSAGE_ID)
+#         live, not_live = await get_all_streamer_status_db(async_session)
+#         formatted_string = format_streamer_status_list(live, not_live)
+#         await message_to_edit.edit(content=formatted_string, suppress=True)
+#     except Exception as e:
+#         logger.error(f"Failed to edit streamer live, not live msg: {e}")
 
-@tasks.loop(seconds=60)  # every minute
+@tasks.loop(seconds=60)
 async def edit_streamer_status_msg():
     try:
         logger.info("Editing streamer live, not live msg")
-        channel = client.get_channel(STREAMERS_CHANNEL_ID)
+        channel = bot.get_channel(STREAMERS_CHANNEL_ID)
         message_to_edit = await channel.fetch_message(STREAMERS_MESSAGE_ID)
         live, not_live = await get_all_streamer_status_db(async_session)
-        formatted_string = format_streamer_status_list(live, not_live)
-        await message_to_edit.edit(content=formatted_string, suppress=True)
+        
+        logger.info(f"Live streamers count: {len(live)}")
+        logger.info(f"Offline streamers count: {len(not_live)}")
+        
+        # Alternative: Use description for everything
+        embed = discord.Embed(
+            title="📺 **━━━ STREAMER STATUS ━━━** 📺",
+            color=discord.Color.red() if live else discord.Color.dark_grey(),
+        )
+
+        description = ""
+
+        # Add live section to description
+        description += "**━━━ 🔴 LIVE NOW 🔴 ━━━**\n"
+        if live:
+            for i, streamer in enumerate(live, 1):
+                if streamer['start_time']:
+                    timestamp = f"<t:{int(streamer['start_time'].timestamp())}:R>"
+                    description += f"**{i}.** [{streamer['name']}]({streamer['url']}) — live {timestamp}\n"
+                else:
+                    description += f"**{i}.** [{streamer['name']}]({streamer['url']})\n"
+        else:
+            description += "*No one is currently live*\n"
+
+        description += "\n**━━━ ⛔ OFFLINE ⛔ ━━━**\n"
+        if not_live:
+            for i, streamer in enumerate(not_live, 1):
+                if streamer['start_time']:
+                    timestamp = f"<t:{int(streamer['start_time'].timestamp())}:R>"
+                    description += f"**{i}.** [{streamer['name']}]({streamer['url']}) — {timestamp}\n"
+                else:
+                    description += f"**{i}.** [{streamer['name']}]({streamer['url']})\n"
+                
+                # Check total description length
+                if len(description) > 3900:  # Leave buffer
+                    description += f"\n*➤ {len(not_live) - i} more offline...*"
+                    break
+        else:
+            description += "*No offline streamers*\n"
+
+        embed.description = description[:4096]  # Ensure we don't exceed limit
+
+        # Add footer
+        embed.timestamp = datetime.now(timezone.utc)
+
+        embed.set_footer(
+            text=f"📊 {len(live)} Live • {len(not_live)} Offline"
+        )
+        
+        await message_to_edit.edit(content="", embeds=[embed], suppress=False)
+        logger.info("Streamer list message edited successfully")
+        
     except Exception as e:
         logger.error(f"Failed to edit streamer live, not live msg: {e}")
-
 
 async def initialize_db() -> None:
     """
@@ -737,7 +988,7 @@ async def initialize_db() -> None:
 
 async def main():
     await initialize_db()
-    await client.start(DISCORD_TOKEN)
+    await bot.start(DISCORD_TOKEN)
 
 if __name__ == '__main__':
     asyncio.run(main())

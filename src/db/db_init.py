@@ -33,6 +33,7 @@ class Streamer(Base):
     __tablename__ = 'streamer'
     name = Column(String(40), primary_key=True, nullable=False)
     title = Column(String(255), server_default="N/A")
+    platform = Column(String(30), nullable=False)
     is_live = Column(Boolean, default=False)
     stream_id = Column(Integer, default=-1)
     start_time = Column(DateTime(timezone=True), server_default=func.now())

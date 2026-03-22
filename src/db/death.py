@@ -7,6 +7,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.sql.functions import sum
 from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 from config.logger_config import get_logger
 from datetime import datetime, timedelta
 
@@ -17,7 +18,7 @@ logger = get_logger(__name__)
 ###### Death table
 ##########################
 async def get_sum_death_db(
-    async_session: async_sessionmaker,
+    async_session: async_sessionmaker[AsyncSession],
     data: dict
 ):
     """
@@ -43,14 +44,14 @@ async def get_sum_death_db(
 
 # Use for Recent Total GP
 async def get_all_death_sum_values_db(
-    async_session: async_sessionmaker,
+    async_session: async_sessionmaker[AsyncSession],
     time_range_hours: int = None
 ):
     """
 
     Parameter
     ----------
-    async_session: async_sessionmaker
+    async_session: async_sessionmaker[AsyncSession]
         
     
     time_range_hours: int
@@ -78,7 +79,7 @@ async def get_all_death_sum_values_db(
 
 
 async def insert_death_db(
-    async_session: async_sessionmaker,
+    async_session: async_sessionmaker[AsyncSession],
     data: dict
 ):
     async with async_session() as session:

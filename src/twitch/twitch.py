@@ -1,4 +1,5 @@
 import requests
+import time
 from config.logger_config import get_logger
 import asyncio
 from urllib.parse import quote
@@ -78,7 +79,8 @@ async def update_twitch_profile_pic(streamer: str):
                 data[0].get('profile_image_url', "N/A")
                 if data else "N/A"
             ),
-            "url": f"https://twitch.tv/{streamer}"
+            "url": f"https://twitch.tv/{streamer}",
+            "platform": "twitch"
         }
 
         # Twitch name exists
@@ -95,7 +97,6 @@ async def update_all_twitch_profile_pics(streamers: list[str]):
     logger.info("Updating all Twitch profile pictures")
     tasks = []
     for streamer in streamers:
-        print(f"{streamer} had his profile pic updated")
         tasks.append(asyncio.create_task(
             update_twitch_profile_pic(
                 streamer=streamer,
@@ -128,10 +129,11 @@ async def get_twitch_stream_status(client: Bot, streamer: str):
             "is_live": (True if data else False),
             "stream_id": (data[0].get('stream_id', -1) if data else -1),
             "video_thumbnail": (
-                video_thumbnail.format(width=1920, height=1080)
+                f"{video_thumbnail.format(width=1920, height=1080)}?t={int(time.time())}"
                 if video_thumbnail != "N/A" else "N/A"
             ),
-            "url": f"https://twitch.tv/{streamer}"
+            "url": f"https://twitch.tv/{streamer}",
+            "platform" : "twitch"
         }
 
         # Profile picture not in data - obtain from db

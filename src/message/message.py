@@ -234,21 +234,22 @@ def getMessageCategory(fullStringNoDate: str) -> dict | None:
             "message" : prefix+" "+fullStringNoDate,
             "category" : messageCategory
         }
-    elif colonCounter>=1 and substringCombatTask in fullStringNoDate and "CA_ID" in fullStringNoDate:
+    elif colonCounter>=1 and substringCombatTask in fullStringNoDate:
         # Example of input string
-        #     CA_ID:484|Zhaerdra haw completed a grandmaster task: Phantom Muspah Manipulator
-
+        #     Zhaerdra has completed a grandmaster task: Phantom Muspah Manipulator
+        
         prefix=":crossed_swords:"
 
         # combat task
         messageCategory = MessageCategory.CB_TASK
         url = webhook_config.CB_TASK_URL
-        fullStringNoDate = fullStringNoDate[fullStringNoDate.index("|") + 1: ]
         content_dict = {
             "url" : url,
             "message" : prefix+" "+fullStringNoDate,
             "category" : messageCategory
         }
+            
+
 
     # elif colonCounter==0 and "unlocked" in fullStringNoDate and "League" in fullStringNoDate:
     #     prefix="<:leagues:1165723439596847245>"
@@ -295,7 +296,7 @@ def extractRSN(ccMessageNoDate: str, messageCategory: MessageCategory) -> str:
         str
             The runescape name the in-game message originated from
     """
-
+    logger.info(f"ccMessageNoDate is this: {ccMessageNoDate}")
     rsn = ""
     if messageCategory == MessageCategory.PK:
         defeatedIndex = ccMessageNoDate.index("defeated")
@@ -373,13 +374,28 @@ async def extractLootValue(ccMessageNoDate: str, messageCategory: MessageCategor
     # else remove (unf) or (10) or (full) and then check for coins
     if (messageCategory == MessageCategory.PK) or (messageCategory == MessageCategory.DROP) or (messageCategory == MessageCategory.DEATH):
         try:
+            print(f"ccMessageNoDate before is :{ccMessageNoDate}")
             if "(" in ccMessageNoDate:
                 # has parentheses
-                if(ccMessageNoDate[ccMessageNoDate.index('(')+1].isdigit()) and ccMessageNoDate[ccMessageNoDate.index(')')-1]=='s':
+                if ("(unf)" in ccMessageNoDate):
+                    # ccMessageNoDate: SogMonkey received a drop: 86 x Dragon bolts (unf) (246,476 coins).
+                    left_char = "("
+                    first_index = ccMessageNoDate.find(left_char)
+                    second_index = ccMessageNoDate.find(left_char, first_index + 1)
+                    coinsBeginIndex = second_index+1
+
+                    right_char = ")"
+                    first_index = ccMessageNoDate.find(right_char)
+                    second_index = ccMessageNoDate.find(right_char, first_index + 1)
+                    coinsEndingIndex = second_index-6 #subtract "coins" str length
+                    coinsStr = ccMessageNoDate[coinsBeginIndex:coinsEndingIndex]
+
+                elif(ccMessageNoDate[ccMessageNoDate.index('(')+1].isdigit()) and ccMessageNoDate[ccMessageNoDate.index(')')-1]=='s':
                     coinsBeginIndex = ccMessageNoDate.index('(')+1
                     coinsEndingIndex = ccMessageNoDate.index(')')-6 #subtract "coins" str length
                     coinsStr = ccMessageNoDate[coinsBeginIndex:coinsEndingIndex]
-                elif ("(uncharged)" in ccMessageNoDate):
+                    print(f"coinsStr is now: {coinsStr}")
+                elif ("(uncharged)" in ccMessageNoDate and "coin" not in ccMessageNoDate):
                     # 1 pair of parentheses
                     # Make API call to get real-time price of scythe, shadow, or sanguinesti staff
                     coinsStr = await getRealTimePrice(ccMessageNoDate=ccMessageNoDate)
@@ -390,14 +406,15 @@ async def extractLootValue(ccMessageNoDate: str, messageCategory: MessageCategor
                     ccMessageNoDate = ccMessageNoDate[:-1] + f" ({coinsStr} coins)."
 
                 else:
-                    #find index of first ')'
-                    firstEndParenIndex = ccMessageNoDate.index(')')
-                    #substring everything after, to make it a normal string with just one set of (coins) paren
-                    ccMessageNoDate = ccMessageNoDate[firstEndParenIndex+1:]
-                    #standard parse coins
-                    coinsBeginIndex = ccMessageNoDate.index('(')+1
-                    coinsEndingIndex = ccMessageNoDate.index(')')-6 #subtract "coins" str length
-                    coinsStr = ccMessageNoDate[coinsBeginIndex:coinsEndingIndex]
+                    # Find the last occurrence of "coins)"
+                    coinsEndIndex = ccMessageNoDate.rfind("coins)")
+                    if coinsEndIndex != -1:
+                        # Work backwards to find the opening '(' before "coins)"
+                        coinsBeginIndex = ccMessageNoDate.rfind('(', 0, coinsEndIndex) + 1
+                        # Extract the value between '(' and ' coins'
+                        coinsStr = ccMessageNoDate[coinsBeginIndex:coinsEndIndex].strip()
+                    else:
+                        coinsStr = ""
             else:
                 # No parentheses
                 # Make API call to get real-time price
@@ -407,7 +424,9 @@ async def extractLootValue(ccMessageNoDate: str, messageCategory: MessageCategor
                 #   BigBossHoss received special loot from a raid: Dragon hunter crossbow.
                 #   BigBossHoss received special loot from a raid: Dragon hunter crossbow (54,405,000 coins).
                 ccMessageNoDate = ccMessageNoDate[:-1] + f" ({coinsStr} coins)."
-                
+            
+            print(f"ccMessageNoDate after is :{ccMessageNoDate}")
+            print(f"coinsStr is :{coinsStr}")
             return ccMessageNoDate, coinsStr.replace(',', '')
         except ValueError as e:
             return ccMessageNoDate, "0"
@@ -452,6 +471,8 @@ async def getRealTimePrice(ccMessageNoDate: str) -> str:
         "Justiciar chestguard": "22327",
         "Justiciar legguards": "22328",
         "Scythe of vitur (uncharged)": "22486",  # scythe of vitur (uncharged)
+        # Doom
+        "Eye of ayak (uncharged)": "31115",
     }
     
     url = "https://prices.runescape.wiki/api/v1/osrs/latest"
@@ -502,283 +523,3 @@ def extractTimeInSeconds(ccMessageNoDate: str) -> float:
     #0:10
     #0:10.8
     return pbTimeSeconds
-
-
-def checkForBingoDrop(fullStringNoDate: str, content_dict: dict):
-    """
-        Determine the appropriate webhook url, message, and
-        MessageCategory from an in-game message
-
-        Example of an in-game message:
-            <:TaskMastericon:1147705076677345322>
-            ScytheMane has completed the Hard Kandarin diary\.
-
-        Parameters
-        ----------
-        fullStringNoDate: str
-            Runescape message without the preceding emoji
-
-        Returns
-        -------
-        dict
-            The webhook url, message, and MessageCategory as a dictionary
-    """
-    if content_dict:
-        content_dict["isBingo"] = False  # default value
-
-        bingo_drops = [
-            # 3 pairs of Glacial temotli OR pet
-            "Glacial temotli",
-            "Moxi",
-            # Any 2 DT2 uniques OR pet
-            "Baron",
-            "Butch",
-            "Lil'viathan",
-            "Wisp",
-            "Virtus mask",
-            "Virtus robe top",
-            "Virtus robe bottom",
-            #   duke
-            "Magus vestige",
-            "Eye of the duke",  # clog
-            #   leviathan
-            "Venator vestige",
-            "Leviathan's lure",     # clog
-            #   vardorvis
-            "Ultor vestige",
-            "Executioner's axe head", # clog
-            #   whisperer
-            "Bellator vestige",
-            "Siren's staff",    # clog
-            # 3 colo uniques (excludes quiver) clogs only!! do not show up as drops
-            #   OR pet
-            "Smol heredit",
-            "Sunfire fanatic helm",
-            "Sunfire fanatic cuirass",
-            "Sunfire fanatic chausses",
-            "Tonalztics of ralos",
-            "Echo crystal",
-            # Zombie axe
-            "Broken zombie axe",
-            # Zombie helmet
-            "Broken zombie helmet",
-            # Voidwaker blade
-            "Voidwaker blade",
-            # Voidwaker hilt
-            "Voidwaker hilt",
-            # Voidwaker gem
-            "Voidwaker gem",
-            # Complete chugging barrel (only a collection log)
-            "Chugging barrel (disassembled)",
-            # 3 ToA uniques
-            #   Or Pet
-            "Tumeken's guardian",
-            "Osmumten's fang",
-            "Lightbearer",
-            "Elidinis' ward",
-            "Masori mask",
-            "Masori body",
-            "Masori chaps",
-            "Tumeken's shadow (uncharged)",
-            # 3 ToB uniques
-            #  or Pet
-            "Lil' zik",
-            "Avernic defender hilt",
-            "Ghrazi rapier",
-            "Sanguinesti staff (uncharged)",  # Sanguinesti staff (uncharged)
-            "Justiciar faceguard",
-            "Justiciar chestguard",
-            "Justiciar legguards",
-            "Scythe of vitur (uncharged)",  # scythe of vitur (uncharged)                                         
-            # 2 Cox uniques
-            #   or pet
-            "Olmlet",
-            "Twisted buckler",
-            "Dragon hunter crossbow",
-            "Dinh's bulwark",
-            "Ancestral hat",
-            "Ancestral robe top",
-            "Ancestral robe bottom",
-            "Dragon claws",
-            "Elder maul",
-            "Kodai insignia",
-            "Twisted bow",
-            # Gauntlet
-            "Youngllef",
-            "Enhanced crystal weapon seed",
-            "Crystal armour seed",
-            # All 3 zulrah OR mutagen
-            #   or pet
-            "Pet snakeling",
-            "Magma mutagen", "Tanzanite mutagen",
-            "Tanzanite fang", "Magic fang", "Serpentine visage",
-            # 5 Fire capes / 1 infernal cape
-            #   or pet
-            "Tzrek-jad",
-            "Jal-nib-rek",
-            "Infernal cape",
-            "Fire cape",
-            # 1 Slayer boss uniques (clan mates will screenshot)
-            # Full twinflame staff
-            "Fire element staff crown",
-            "Ice element staff crown",
-            # 2 GOTR uniques
-            #   or pet
-            "Abyssal protector",
-            "Abyssal needle",
-            "Abyssal lantern",
-            "Abyssal red dye",
-            "Abyssal green dye",
-            "Abyssal blue dye",
-            # Full set OATHPLATE armor
-            "Yami",
-            "Oathplate helm",
-            "Oathplate chest",
-            "Oathplate legs",
-            # 2 Huey Uniques
-            #   or pet
-            "Huberte",
-            "Hueycoatl hide",
-            "Tome of earth (empty)",
-            "Dragon hunter wand",
-            # 1 sigil drop
-            #   or pet
-            "Pet dark core",
-            "Arcane sigil",
-            "Spectral sigil",
-            "Elysian sigil",
-            # 3 Tomes of water OR pet
-            "Tiny tempor",
-            "Tome of water (empty)",
-            # 2 cudgels
-            #   or pet
-            "Sraracha",
-            "Sarachnis cudgel",
-            # 2 Nex drops 
-            #   OR pet
-            "Zaryte vambraces", "Nihil horn", "Torva full helm (damaged)",
-            "Torva platebody (damaged)", "Torva platelegs (damaged)",
-            "Ancient hilt",
-            "Nexling",
-            # 3 Venator shards
-            #   or pet
-            "Muphin",
-            "Venator shard",
-            # 1 Crystal tool seed 
-            #   OR pet
-            "Crystal tool seed",
-            "Smolcano",
-            # All medium clue boots
-            "Ranger boots",
-            "Holy sandals",
-            "Spiked manacles",
-        ]
-        
-        team_green = [
-            "McFrop",
-            "SoloDabbd",
-            "rambroze",
-            "Weave X",
-            "Hemlockk",
-            "69Kaboom420",
-            "GART0U",
-            "Casey Ellis",
-            "Nokowt",
-            "davecolis",
-            "Farmrr",
-            "Baco n",
-            "NIEVES STRAP",
-            "Yoshi6380",
-            "ItsFlowstate",
-            "ryanlul",
-            "IronBlock460",
-            "SogMonkey",
-            "drhookahh",
-            "CMDRSquiggly",
-            "canabisaurus",
-            "BaggoWaggo",
-            "HC-Chyne",
-            "VVaelin",
-        ]
-
-        team_blue = [
-           "Schm0ke",
-           "jibbuh",
-           "Slush i",
-           "zjoka",
-           "Ur left nut",
-           "Red EyedXaXa",
-           "Hunglllef",
-           "OH MY R0D",     # R0D contains a zero
-           "ScytheMane",
-           "MarlinMerlin",
-           "eeguod",
-           "OS Rex",
-           "War Plane",
-           "Saucemanchie",
-           "grandsonned",
-           "Hara xx",    # xhara?
-           "ElectriccK",
-           "Rmltorino60",
-           "philly788",
-           "Bleakpenguin",
-           "En pc",
-           "BirnDream",
-           "RelentlessJr",
-           "Pretty Ass",
-           "Senpais Cox",
-        ]
-
-        team_red = [
-            "steamyplank",
-            "BigBossHoss",
-            "Mike Kent",
-            "Waterri",
-            "Felix Flail",
-            "EternalToad",
-            "Endlingg",
-            "Maddognathan",
-            "z bak",
-            "Hotdog Stand",
-            "owenowen_IM",
-            "Mooselito",
-            "Zachs Life",
-            "MiniBossHoss",
-            "S U S A N O",
-            "PSYOPER",
-            "R o l i t o",
-            "Spahrten",
-            "3st3_VATO",
-            "SimianMonke",
-            "turbo_z31",
-            "SirQweaD",
-        ]
-
-
-        # Determine if drop is bingo-related
-        for drop in bingo_drops:
-            if drop in fullStringNoDate:
-                content_dict["isBingo"] = True
-                break
-        
-        # Now determine team - green, blue, red
-        if content_dict["isBingo"]:
-            for name in team_green:
-                if name in fullStringNoDate:
-                    # send to green team drop webhook
-                    content_dict["teamName"] = "green"
-                    return content_dict
-
-            for name in team_blue:
-                if name in fullStringNoDate:
-                    # send to blue team drop webhook
-                    content_dict["teamName"] = "blue"
-                    return content_dict
-
-            for name in team_red:
-                if name in fullStringNoDate:
-                    # send to red team drop webhook
-                    content_dict["teamName"] = "red"
-                    return content_dict
-
-    return content_dict
