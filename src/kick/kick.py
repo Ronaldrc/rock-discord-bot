@@ -67,11 +67,11 @@ def parse_json(data):
     username = data.get("user", {}).get("username")
 
     # Handle underscore replacement for URL - 20Mar2026 modified to only handle stoned-land
-    if username == 'Stoned_Land' and '_' in username:
-        name_with_hyphen = username.replace("_", "-")
-        url = f'https://kick.com/{name_with_hyphen}/'
-    else:
-        url = f'https://kick.com/{username}/' if username else "N/A"
+    # if username == 'Stoned_Land' and '_' in username:
+    #     name_with_hyphen = username.replace("_", "-")
+    #     url = f'https://kick.com/{name_with_hyphen}/'
+    # else:
+    url = f'https://kick.com/{username}/' if username else "N/A"
     
     parsed_json = {
         "name": data.get("user", {}).get("username"),
