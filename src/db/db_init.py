@@ -6,6 +6,7 @@ from sqlalchemy import (
     String,
     DateTime,
     Boolean,
+    Text
 )
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import declarative_base
@@ -86,6 +87,21 @@ class BingoDrop(Base):
     date = Column(DateTime(timezone=True), server_default=func.now())
     item = Column(String(40))
     team_name = Column(String(30))
+
+
+class OauthTokens(Base):
+    __tablename__ = 'oauth_tokens'
+    platform = Column(String(30), primary_key=True)
+    access_token = Column(Text, nullable=False)
+    refresh_token = Column(Text, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    scopes = Column(Text)
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
 
 
 # Create table if not exist
